@@ -51,6 +51,7 @@ Kanaka 不是两个 App，也不要求用户永久选择一种模式。同一个
 
 ## 文档
 
+- [产品对齐决策](docs/ALIGNMENT_DECISIONS.md)
 - [故事圣经](docs/STORY.md)
 - [游戏设计文档](docs/GAME_DESIGN_DOCUMENT.md)
 - [开发与 App Store 发布规划](docs/DEVELOPMENT_PLAN.md)
