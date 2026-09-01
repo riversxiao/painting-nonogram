@@ -1,57 +1,68 @@
 # Kanaka / Painting Nonogram
 
-Kanaka 是一款面向 iPhone 与 iPad 的叙事型 Nonogram 游戏。玩家在“长夜”后的文明修复署工作，通过行列线索修复受损图像，并获得真正可以制作的拼豆蓝图。
+Kanaka 是一款面向 iPhone 与 iPad 的叙事型 Nonogram 游戏。玩家在“长夜”后的文明修复署工作，通过行列线索修复作品中真实受损的局部，并获得真正可以制作的整幅拼豆蓝图。
 
-## 一个 App，两条路径
+## 一个 App，两条平等路径
 
-Kanaka 不是两个 App，也不要求用户永久选择一种模式。首次启动先介绍“长夜”和文明修复署，随后用一局可明确跳过的 `5×5` 共同教学解释 Nonogram；用户完成或跳过教学后，拼豆工坊开放，并平等选择初始路径。进入主空间后可随时切换：
+首次启动先介绍“长夜”和文明修复署，随后用一局可明确跳过的 `5×5` 共同教学解释 Nonogram。完成或跳过教学后，用户可选择初始落点，并随时切换：
 
-- **学徒成长 / 修复室**：作为见习修复师，从基础 Nonogram 开始成长、推进故事、恢复作品，并通过完成作品获得拼豆蓝图。
-- **专业画师 / 拼豆工坊**：从作品、色号、材料和导出工具开始，使用已经获得或直接解锁的蓝图进行专业制作，也可以随时回到修复室挑战对应作品。
+- **学徒成长 / 修复室**：解开 Nonogram、恢复作品、推进故事并亲手获得蓝图。
+- **专业画师 / 拼豆工坊**：使用已获得或已被授予权限的蓝图，查看色号、材料并导出制作文件，也可随时回到修复室。
 
-两条路径共享同一作品库、蓝图库和购买状态，角色价值和首页层级平等。初始选择只影响教学与默认落点，不会锁定功能。直接购买蓝图不会把谜题标记为完成，也不会推进故事或授予“亲手修复”徽章。
+两条路径共享内容、进度与权益。蓝图库权益不会完成谜题、改变作品状态、推进 Gallery/Chapter、Museum 或故事进度，也不会授予“亲手修复”印章。
 
-核心访问规则：
+## 内容与完成规则
 
 ```text
-作品完整修复 = 该作品关卡的全部核心 Fragment 已完成
-可使用完整蓝图 = 作品完整修复 OR 已购买对应蓝图权益
-故事修复完成 = 该作品关卡的全部核心 Fragment 已完成
+Museum
+└─ Gallery（承载 Chapter 叙事；Museum 1 可 1:1 映射）
+   └─ Artwork
+      └─ 1–4 Repair Fragments
+         └─ 每个 Fragment 对应一个真实破损区域和一个 Nonogram
 ```
 
-内容层级：一个作品关卡围绕一幅待修复大图，包含多张局部 Fragment 图；每张局部图对应一个 Nonogram。完成单个 Fragment 只恢复大图的一小块，完成全部核心 Fragment 才获得完整大图蓝图。
+每幅 Artwork 大部分保持完好，只为实际存在的 `1–4` 个局部破损配置 Repair Fragment。第 2–4 个仅在确有破损时存在；一旦配置，每个 Fragment 都必须完成。
 
-## 产品定位
+- 每完成一个 Fragment，只修复对应区域，并显示 `x/n`。
+- 完成最后一个 Fragment 后，立即展示整幅修复作品、授予整幅可制作拼豆蓝图与“亲手修复”印章。
+- 默认不奖励局部可制作蓝图。
+- 只有一个 Fragment 的 Artwork，完成一题就立即触发整幅完成流程。
 
-- 安静、克制、有责任感的文明修复幻想。
-- Nonogram 是科学修复过程，不是与故事无关的小游戏。
-- 大型作品由多个适合手机操作的局部谜题逐步恢复。
-- 完成奖励是包含色号、数量、网格和打印文件的实用拼豆制作包。
-- 无强制广告、无体力、无随机付费、无强制账号。
+权限统一为：
 
-## 首发目标
+```text
+require 1 <= artwork.fragments.count <= 4
+artworkRestored = artwork.fragments.allSatisfy(isCompleted)
+canUseArtworkBlueprint = artworkRestored OR hasMuseumBlueprintEntitlement(artwork.museumID)
+hasRestorerSeal = artworkRestored
+```
 
-- iPhone + iPad 通用 App。
-- 3 个章节；作品关卡和局部 Nonogram 谜题数量在 A-005 中确认。
-- 当前 `100–150` 只作为局部 Nonogram 谜题数量的规划占位，不代表 100–150 个作品关卡。
+专业蓝图库以 Museum 为内容与权益边界。拥有或被授予某 Museum 的蓝图库权益，可使用该馆的专业蓝图，但不承诺覆盖未来 Museum。Museum 2 是新增 Galleries、Artworks、puzzles 与 blueprints 的新范围。具体 SKU、定价及免费内容组合仍由 A-004 验证。
+
+## Museum 1 首发规划
+
+A-005 与垂直切片验证前，Museum 1 使用以下制作包络：
+
+- `3` 个 Galleries：静默展厅、烟痕画廊、水下档案。
+- `12–18` 幅 Artworks。
+- `20–30` 个 Repair Fragment puzzles。
+- 制作基线：`15` 幅 Artworks / `24` 个 puzzles。
+- 基线示例分布：`9×1、4×2、1×3、1×4`，仅用于估算内容生产，不是商店承诺。
 - `5×5`、`10×10`、`15×15`、`20×20`，少量 `25×25`。
-- 3–5 个大型作品关卡，每个关卡由多张局部 Fragment 图组成。
-- 简体中文、繁体中文、英文；日文视首发预算决定。
-- 免费序章 + 一次性完整版/工坊权益，具体 SKU 在垂直切片后验证。
+- 简体中文、繁体中文、英文；日文视 A-005 与预算验证结果决定。
+
+现有 `10` 个素材只用于技术验证，不代表首发规模。它们应被编排为能覆盖 1、2、3、4 个 Fragment 边界与整幅完成流程的测试内容。
 
 ## 推荐技术栈
 
-- Swift 6.x
-- SwiftUI
+- Swift 6.x、SwiftUI
 - SwiftUI `Canvas` + Core Graphics 棋盘
 - SwiftData 本地进度
-- StoreKit 2 内购
-- CloudKit 作为后续可选同步能力
+- StoreKit 2 权益
 - AVFoundation 音频与视频
-- OSLog、MetricKit、Xcode Organizer
-- Swift Testing / XCTest / XCUITest
+- OSLog、MetricKit、Swift Testing / XCTest / XCUITest
 
-游戏工程不依赖任何素材生成仓库或生成模型。所有图片、答案蒙版、视频与音频均作为经过验收的普通输入资产导入。
+游戏工程只读取经过验收的图片、答案蒙版、视频、音频和元数据，不依赖素材生成仓库或生成模型。
 
 ## 文档
 
@@ -62,9 +73,9 @@ Kanaka 不是两个 App，也不要求用户永久选择一种模式。首次启
 
 ## 当前状态
 
-项目处于前期设计与技术规划阶段。首个工程目标是用 10 个现成素材完成以下垂直链路：
+项目处于前期设计与技术规划阶段。首个工程目标是用现有 `10` 个素材验证：
 
 ```text
-答案蒙版 → 关卡编译 → 唯一解验证 → iPhone/iPad 游玩
-→ 自动存档 → 完成作品 → 获得并导出拼豆蓝图
+内容导入 → schema 与区域校验 → 唯一解验证 → iPhone/iPad 游玩
+→ Fragment x/n → 最后一块触发整幅恢复 → 蓝图权限与印章正确派生
 ```
