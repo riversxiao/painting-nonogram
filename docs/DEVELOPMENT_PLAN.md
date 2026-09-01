@@ -77,8 +77,9 @@ painting-nonogram/
 
 ### 3.2 `KanakaContentKit`
 
-- `level-v1` / `pack-v1` Codable schema。
-- 作品、fragment、蓝图和本地化模型。
+- `artwork-case-v1` / `fragment-puzzle-v1` / `pack-v1` Codable schema。
+- `ArtworkCase` 表示一个作品关卡和完整蓝图奖励单位。
+- `Fragment` 表示作品关卡中的一张局部图，并一对一引用一个 `PuzzleDefinition`。
 - manifest 与资源引用校验。
 - SHA-256 内容哈希。
 - schema migration。
@@ -104,15 +105,15 @@ painting-nonogram/
 
 ```swift
 struct BlueprintAccess {
-    let solvedArtwork: Bool
+    let allCoreFragmentsCompleted: Bool
     let purchasedEntitlement: Bool
 
     var canViewProductionFiles: Bool {
-        solvedArtwork || purchasedEntitlement
+        allCoreFragmentsCompleted || purchasedEntitlement
     }
 
     var hasRestorerSeal: Bool {
-        solvedArtwork
+        allCoreFragmentsCompleted
     }
 }
 ```
@@ -123,19 +124,31 @@ struct BlueprintAccess {
 
 ### 4.1 内容实体
 
+```text
+Chapter
+└─ ArtworkCase                  # 一个作品关卡；一幅大图；一个完整蓝图奖励
+   ├─ Fragment [core]           # 一张局部图
+   │  └─ PuzzleDefinition       # 一个 Nonogram
+   ├─ Fragment [core]
+   │  └─ PuzzleDefinition
+   └─ Fragment [optional]
+      └─ PuzzleDefinition
+```
+
 - `Chapter`
+- `ArtworkCase`
 - `Artwork`
-- `Fragment`
-- `PuzzleDefinition`
-- `Blueprint`
+- `Fragment`（包含 `isCore` 与大图归一化位置）
+- `PuzzleDefinition`（与 Fragment 一对一）
+- `Blueprint`（归属于 ArtworkCase）
 - `MaterialList`
 - `ArchiveEntry`
 - `ContentPack`
 
 ### 4.2 玩家实体
 
-- `LevelProgress`
-- `ArtworkProgress`
+- `FragmentPuzzleProgress`
+- `ArtworkCaseProgress`（分别记录核心修复进度和档案完成度）
 - `InProgressSession`
 - `StoryState`
 - `UserPreferences`
@@ -143,13 +156,30 @@ struct BlueprintAccess {
 
 ### 4.3 状态边界
 
+- 完成一个 Fragment 谜题只更新该谜题状态和作品局部进度。
+- 只有全部核心 Fragment 完成，`ArtworkCase` 才进入完整修复状态并授予完整蓝图与亲手修复印章。
+- 可选 Fragment 只影响档案完成度和额外奖励。
 - 购买只修改 entitlement。
-- 解谜完成同时修改 level、artwork 和 story progress。
-- 蓝图可用性由进度或 entitlement 派生，不作为唯一真相单独手工写入。
-- 购买蓝图后不生成虚假的 level completion。
+- 蓝图可用性由“全部核心 Fragment 已完成”或 entitlement 派生，不作为唯一真相单独手工写入。
+- 购买蓝图后不生成虚假的 Fragment 完成状态或作品修复状态。
 - 内容升级时按稳定 ID 与 content hash 迁移。
 
 ## 5. 内容输入规范
+
+一个作品关卡包含一幅大图、一份完整蓝图和多个局部 Fragment：
+
+```text
+artwork-case-001/
+├── metadata.json
+├── restored-artwork.heic
+├── damaged-artwork.heic
+├── full-blueprint.pdf
+├── full-blueprint.png
+└── fragments/
+    ├── fragment-001/          # core；一张局部图；一个 Nonogram
+    ├── fragment-002/          # core；一张局部图；一个 Nonogram
+    └── fragment-003/          # optional；一张局部图；一个 Nonogram
+```
 
 每个 fragment 至少包含：
 
@@ -168,15 +198,17 @@ fragment-001/
 - 左上原点，row-major。
 - 黑/透明为空，白为 Filled。
 - 必须人工检查小尺寸轮廓。
-- 大型作品另有归一化 fragment 坐标。
+- 大型作品记录每个 fragment 的归一化坐标与 `isCore`。
+- 每个 Fragment 必须且只能引用一个 `PuzzleDefinition`；完整蓝图只存在于父级 `ArtworkCase`。
 
-## 6. 关卡编译工具
+## 6. 内容编译工具
 
 建立 macOS Swift CLI：`kanaka-content`。
 
 ```text
 validate-source
-→ compile-levels
+→ compile-artwork-cases
+→ compile-fragment-puzzles
 → generate-clues
 → solve-and-score
 → validate-assets
@@ -405,7 +437,7 @@ App Store Connect 的隐私申报必须与实际二进制一致：[App Privacy D
 - 可完成或明确跳过的 `5×5` 共同教学。
 - 平等路径选择：学徒成长 / 专业画师。
 - 修复室与工坊。
-- 15–20 关。
+- 一个作品关卡通常包含多个局部 Nonogram 谜题；M3 用一个完整作品关卡验证全部核心 Fragment 解锁大图的闭环。
 - 一幅大型作品。
 - 蓝图查看和导出。
 - StoreKit 测试权益。
@@ -415,9 +447,9 @@ App Store Connect 的隐私申报必须与实际二进制一致：[App Privacy D
 
 ### M4：完整 V1（8–10 周）
 
-- 100–150 关。
+- 局部 Nonogram 谜题总数待 A-005 对齐；当前 `100–150` 仅为规划占位。
 - 三章。
-- 3–5 幅大型作品。
+- 3–5 个大型作品关卡，每个包含多个 Fragment。
 - 完整工坊。
 - 商业化、本地化、权利台账。
 
@@ -464,9 +496,9 @@ Apple 支持通过 TestFlight 邀请外部测试者：[TestFlight external testi
 ### 第 1 周
 
 - 建立 Swift Package 与 App 工程。
-- 定义 `level-v1` / `pack-v1`。
+- 定义 `artwork-case-v1` / `fragment-puzzle-v1` / `pack-v1`。
 - 冻结单 App 双路径状态模型。
-- 准备 10 个二值答案蒙版。
+- 准备 10 个 Fragment 二值答案蒙版，至少组成一个完整作品关卡。
 
 ### 第 2 周
 
