@@ -1,8 +1,9 @@
 # Kanaka 作品资产、章节编排与内容生产规范
 
-> 状态：Draft v1（需通过 Museum 1 垂直切片校准）
-> 用途：规定候选画作如何进入 Museum / Gallery / Chapter，如何结合叙事、难度、画境与生产成本排序，以及 `bead-gen` 与本项目的资产边界。
-> 权威边界：内容层级、完成规则与权限仍以 `GAME_DESIGN_DOCUMENT.md` 和 `ALIGNMENT_DECISIONS.md` 为准；白蚀、画境、画桥等未冻结设定以 `NARRATIVE_EXPANSION.md` 为探索输入。
+> 状态：Frozen v2（Museum 1 范围与 Canon 已冻结；评分阈值仍由垂直切片校准）
+> 用途：规定正式画作如何进入 Museum / Gallery / Chapter，如何结合叙事、彩色难度、画境与生产成本排序，以及 `bead-gen` 与本项目的资产边界。
+> 权威边界：内容层级、完成规则与权限仍以 `GAME_DESIGN_DOCUMENT.md` 和 `ALIGNMENT_DECISIONS.md` 为准；白蚀、真实画境、A+B 主角、第二章画桥与 Museum 1 揭示上限以 `STORY.md` 和 `NARRATIVE_EXPANSION.md` 的正式 Canon 为准。
+> 固定范围：Museum 1 = `18` Artworks / `30` Fragment puzzles，分布 `10×1 + 5×2 + 2×3 + 1×4`；Gallery 为 `6幅/8题`、`6/10`、`6/12`。正式清单见 [`MUSEUM_1_ARTWORK_BRIEFS.md`](MUSEUM_1_ARTWORK_BRIEFS.md)。
 
 ## 1. 编排目标
 
@@ -73,24 +74,28 @@ Gallery 是物理内容容器，Chapter 是它承载的叙事映射。放入某 
 `bead-gen` 是 2D 拼豆图资产生产项目，负责：
 
 - 生成完整的彩色拼豆网格；
-- 输出版本化、无损的网格 JSON（建议 `bead-pattern-v1`）；
-- 输出 PNG/JPG 预览；
-- 输出调色板、稳定颜色 ID、品牌色号与色卡版本；
-- 记录生成器版本、来源与内容 hash；
-- 可附题材、时代、情绪、空间类型等候选标签。
+- 输出 `bead-pattern-v1` JSON，作为完整 Artwork 网格、palette 与物理规格的上游事实源；
+- 使用左上原点、row-major、`0=empty`、非零 palette index；
+- 为每个 palette 条目提供稳定 `colorId`、`sRGB8`、品牌色号与色卡版本；
+- 输出可由 JSON 重建的 PNG/JPG 派生预览；
+- 以 canonical JSON 计算 SHA-256，计算时排除 `contentHash` 字段自身；结果写入 `contentHash`，作为 **bead asset hash**；
+- 输出 `contentHash` 及其生成所需的完整字段，并记录生成器版本、来源与权利信息；Blueprint hash 与 puzzle semantic hash 由当前项目分别生成；
+- 可附题材、时代、情绪、空间类型等检索标签。
 
-`bead-gen` **不负责**：Museum / Gallery / Chapter 归属、3D 画境、白蚀表现、Repair Fragment 数量与区域、Nonogram 生成、solver 难度、故事与权益。
+字段级协议与 canonicalization 只在 [`BEAD_PATTERN_SPEC.md`](BEAD_PATTERN_SPEC.md) 定义，本文件不另立冲突格式。`bead-gen` **不负责**：Museum / Gallery / Chapter 归属、3D 画境、白蚀表现、Repair Fragment 数量与区域、彩色 Nonogram semantic grid、puzzle semantic hash、solver 难度、故事与权益。
 
 ### 3.2 `painting-nonogram` 负责
 
 当前项目负责：
 
-- 候选资产验收和章节编排；
-- 3D 画境生成、人工修整、优化、碰撞、路径与空间音频；
+- 正式资产验收和章节编排；
+- 3D 画境离线生成、人工修整、优化、碰撞、路径与空间音频；
 - 破损前后状态和 2D / 3D 对位；
 - Repair Fragment 的真实区域与语义；
-- Nonogram 答案、clues、唯一解、纯逻辑验证和难度评分；
-- Artwork 完成反馈、蓝图、故事事件、内容包、权利与 QA。
+- PuzzleDefinition JSON semantic grid（每格 `empty | colorId`）、`(count,colorIndex)` clues、唯一精确彩色解、纯逻辑验证、puzzle semantic hash 和难度评分；
+- Artwork 完成反馈、`blueprint-v1` 规范事实源及其 Blueprint hash、故事事件、内容包、权利与 QA。
+
+solution PNG、缩略图、预览和导出 PNG 均为派生/debug 资源，不得作为谜题答案、迁移、完成判断或 hash 的事实源。
 
 ### 3.3 无运行时依赖
 
@@ -104,38 +109,39 @@ bead-gen
 
 App 不依赖 `bead-gen` 的代码、服务或模型；输入必须是版本化、可 hash、可离线重建的静态资产。
 
-## 4. 明确区分两组“10 个资产”
+## 4. Museum 1 固定内容矩阵
 
-为消除旧文档中“10 个素材”的歧义，后续统一使用两个代号。
+Museum 1 发布范围不再使用候选批次或垂直切片样本代号。正式 18 幅作品的标题、ID、叙事岗位、Gallery 顺序和 Fragment 目标统一由 [`MUSEUM_1_ARTWORK_BRIEFS.md`](MUSEUM_1_ARTWORK_BRIEFS.md) 维护；本文件规定治理、配额和验收。
 
-### 4.1 `M1-CANDIDATE-10`：完整候选画作批次
+### 4.1 全馆计数
 
-由 `bead-gen` 先产出约 10 幅完整 2D 候选 Artwork 资产，用于 Museum 1 的策展、导入、画境与谜题可行性评估。它们是候选池，不自动成为首发清单，也不改变 Museum 1 的 `12–18` Artworks / `20–30` puzzles 规划包络。
+- `18` Artworks；
+- `30` Fragment puzzles；
+- Artwork Fragment 分布：`10×1 + 5×2 + 2×3 + 1×4`；
+- 每个 Fragment 对应一个 V1 彩色 PuzzleDefinition。
 
-建议覆盖：
+这些是编译和发布硬门，不是估算包络。增删或移动作品必须保持正式清单、manifest、Gallery 计数和全馆分布同时一致。
 
-| 题材 | 建议数量 | 主要验证 |
-|---|---:|---|
-| 人物 / 肖像 | 2 | 身份消除、画中居民、局部情感焦点 |
-| 城市 / 建筑 | 2 | 可行走空间、道路/桥梁、明确恢复路径 |
-| 自然 / 风景 | 2 | 光线、天气、环境声与大尺度变化 |
-| 器物 / 工艺 | 2 | 失传技艺、材料与身体记忆 |
-| 群像 / 叙事场景 | 2 | 人际关系、复杂焦点与后期揭示 |
+### 4.2 Gallery 配额
 
-批次还应有意覆盖稀疏/高密度轮廓、少色/多色、不同可提取谜题尺寸、平面型/空间型构图和不同权利来源。
+| Gallery / Chapter | Artworks | Fragment puzzles | Cardinality 配额 |
+|---|---:|---:|---|
+| Gallery 1 / Chapter 1 | 6 | 8 | `4×1 + 2×2` |
+| Gallery 2 / Chapter 2 | 6 | 10 | `3×1 + 2×2 + 1×3` |
+| Gallery 3 / Chapter 3 | 6 | 12 | `3×1 + 1×2 + 1×3 + 1×4` |
+| **合计** | **18** | **30** | **`10×1 + 5×2 + 2×3 + 1×4`** |
 
-### 4.2 `VS-PUZZLE-10`：垂直切片谜题样本
+### 4.3 英雄画作硬规格
 
-由当前项目从 `M1-CANDIDATE-10` 中选择作品并定义约 10 个 Repair Fragment / PuzzleDefinition 技术样本。推荐装配为四幅测试 Artwork，Fragment 数分别为 `1 / 2 / 3 / 4`，覆盖：
+Gallery 2 的 `1×3` 槽位用于英雄画作《潮汐城的归桥》，正好包含 3 个真实 Repair Fragments：
 
-- `1...4` cardinality；
-- `x/n` 与每题只恢复一处；
-- 最后一块触发整幅恢复；
-- Blueprint 与印章派生；
-- entitlement 不推进进度；
-- 区域、ID、schema、唯一解与存档恢复。
+- `5×5` 彩色题：建立颜色 clue 与空间恢复对应；
+- `10×10` 彩色题：组合同色分隔与异色相邻；
+- `15×15` 彩色题：完成叙事与视觉焦点；
+- 同一 session 内累计 `3–5` 分钟移动、观察与热点交互，不含三题解题、暂停或离开 App；使用受控路径和/或观察点、少量热点与环境声；
+- 若性能、舒适度或无障碍门失败，回退为 2.5D，再失败则采用固定观察点；Fragment、谜题和剧情证据不变。
 
-四幅测试 Artwork 仍需满足真实破损原则。如果某画不适合对应数量，应换画或调整测试装配，不得为凑 `1/2/3/4` 破坏作品完整性。
+其他 3-Fragment 或 4-Fragment 作品仍必须从真实破损出发，不得为满足配额机械切块。配额冲突时应替换正式清单中的作品并重新审批，而不是伪造损坏。
 
 ## 5. 每幅作品必须有一个主要“叙事岗位”
 
@@ -173,12 +179,15 @@ App 不依赖 `bead-gen` 的代码、服务或模型；输入必须是版本化�
 
 作品完成 Fragment、谜题和（如适用）画境制作后，任一失败都必须回退到破损设计、章节位置或候选池：
 
-- 谜题不是唯一解或不能纯逻辑完成；
-- 目标尺寸下轮廓不可辨认；
+- 谜题没有唯一精确彩色解，或不能纯逻辑完成；
+- `(count,colorIndex)` clues 不符合“同色段至少隔一空格、异色段可直接相邻”，或与 JSON semantic grid 不一致；
+- semantic grid 含 `empty | colorId` 之外的答案值，或 palette 无法映射到稳定 `colorId`；
+- 目标尺寸下彩色轮廓或颜色区分不可辨认；
 - 恢复前后在实际设备上不能清楚区分；
-- 3D 世界无法满足性能、舒适度或交互预算；
+- 3D 世界无法满足性能、舒适度或交互预算，且 2.5D/固定观察点回退仍不能通过；
 - 不能提供等价的无障碍路径；
-- 最终资产、权利、hash 或人工试玩记录不完整。
+- `bead-pattern-v1`、canonical hash、三类 semantic hashes、最终资产、权利或人工试玩记录不完整；
+- Museum 1 的 18/30、Gallery 6/8・6/10・6/12 或 `10×1 + 5×2 + 2×3 + 1×4` 计数发生漂移。
 
 无论策展总分多高，发布硬门都不能豁免。
 
@@ -221,10 +230,10 @@ App 不依赖 `bead-gen` 的代码、服务或模型；输入必须是版本化�
 | `tags` | 可选 | `subject / era / mood / spatialType` 等检索标签 |
 | `worldMode` | `provisionallyPlaced` 起 | `none / echo / 2.5d / limited3d` |
 | `targetArtworkLoadBand` | `provisionallyPlaced` 起 | 整幅负担目标：`short / standard / advanced / expert` |
-| `fragmentTargets[]` | `puzzleValidated` 起 | 每项含 `fragmentID`、`targetDifficultyBand`、`solverScore`、`estimatedMinutes`、`damageSemantic` |
+| `fragmentTargets[]` | `puzzleValidated` 起 | 每项含 `fragmentID`、`puzzleRevision`、`puzzleSemanticHash`、`targetDifficultyBand`、`solverScore`、`estimatedMinutes`、`damageSemantic`、预填例外标记 |
 | `restorationFeedback` | `provisionallyPlaced` 起 | 2D / 3D / 声音 / 记忆 / 档案反馈摘要 |
 | `rightsStatus` | 始终 | `pending / cleared / blocked`；`approved` 必须为 `cleared` |
-| `provenance` | 始终 | 来源、生成版本、内容 hash 与权利记录引用 |
+| `provenance` | 始终 | 来源、生成版本、bead asset hash（`contentHash`）、Blueprint hash、puzzle semantic hash 与权利记录引用 |
 | `curationScore` | `provisionallyPlaced` 起 | 当前评分与逐项证据；生产后可重算 |
 | `curationStatus` | 始终 | `candidate / provisionallyPlaced / puzzleValidated / worldValidated / approved / returned` |
 | `evidenceRefs[]` | `puzzleValidated` 起 | solver、试玩、性能、无障碍和人工审查报告引用 |
@@ -243,10 +252,12 @@ App 不依赖 `bead-gen` 的代码、服务或模型；输入必须是版本化�
 
 ### 7.1 两个独立轴
 
-- **单题逻辑难度**：棋盘尺寸、solver 推理步骤、线索信息量、连续段、强制格比例、真人实测时长。
+- **单题逻辑难度**：棋盘尺寸、颜色数量、同色分隔/异色相邻组合、solver 推理步骤、线索信息量、强制格比例、真人实测时长。
 - **整幅作品负担**：Fragment 数、各题总时长、画境探索时长、叙事停顿与完成反馈。
 
-Fragment 多不代表单题难，也不自动属于后期。四个简单 Fragment 可以是低逻辑难度但高总时长；一个 20×20 Fragment 可以是高难度但短叙事节点。
+Fragment 多不代表单题难，也不自动属于后期。四个简单彩色 Fragment 可以是低逻辑难度但高总时长；一个 20×20 彩色 Fragment 可以是高难度但短叙事节点。
+
+所有 V1 正式题都必须具有唯一、精确的彩色解并可纯逻辑完成。正式题无预填是推荐、尚待最终确认；教学、演示与无障碍流程可例外，例外必须在 manifest 和试玩证据中标记。
 
 ### 7.2 章节内难度波形
 
@@ -273,28 +284,26 @@ Fragment 多不代表单题难，也不自动属于后期。四个简单 Fragmen
 
 - Gallery 1：`5×5 / 10×10` 为主，建立规则和信任；
 - Gallery 2：`10×10 / 15×15` 为主，增加连续段与组合推理；
-- Gallery 3：候选为 `15×15` 为主、少量 `20×20`；最多一题 `25×25`，且必须通过小屏手势与放弃率测试。该建议在 A-006 验证前不视为冻结标准。
+- Gallery 3：`15×15` 为主、少量 `20×20`；最多一题 `25×25`，且必须通过小屏手势与放弃率测试。具体比例仍需实机验证，但 V1 彩色规则与 18/30 配额已经冻结。
 
 Museum 1 整体仍以 30% 短局、45% 标准、20% 高级、5% 专家为目标包络；最终由 solver 与真人测试校准。
 
-## 8. Museum 1：约 10 幅候选画的章节预编排模板
+## 8. Museum 1：18 幅正式作品的章节编排约束
 
-本节把 `NARRATIVE_EXPANSION.md` 的探索方向映射为候选策展模板，**不代表白蚀、画桥或具体揭示顺序已经冻结**。在叙事转正前，团队只承诺与专名无关的功能节奏：Gallery 1 以现实修复/短暂回声为主，Gallery 2 验证一次有限 3D 进入与恢复，Gallery 3 验证更复杂的因果反馈；专名、对白与真相顺序可替换。
-
-以下 `3 / 3 / 4` 只是 `M1-CANDIDATE-10` 的预编排容量，不是首发数量承诺。画作必须过策展卡和硬门；不适合就换画，不为填表强塞。
+正式作品逐幅清单统一见 [`MUSEUM_1_ARTWORK_BRIEFS.md`](MUSEUM_1_ARTWORK_BRIEFS.md)。本节冻结每章认知、数量、题量、cardinality、难度与画境职责；策展评分仍用于替换或返工作品，但不能改变总配额。
 
 ### 8.1 Gallery 1 / Chapter 1：静默展厅 —— “缺席之物”
 
 **入场认知：** 这是普通的灾后修复工作。
 **离场认知：** 某些东西不是损坏，而是被删除；其他人会自动接受恢复后的历史。
-**候选数量：** 约 3 幅。
-**难度：** 5×5 / 10×10，单焦点、短局优先。
+**固定数量：** 6 幅 / 8 题；`4×1 + 2×2`。
+**难度：** `5×5 / 10×10` 彩色题，单焦点、短局优先。
 **画境模式：** `none`，结尾最多 `echo`；完整画桥不在本章出现。
 
 适合放入：
 
 - 构图中有一个可被忽略、但恢复后意义立刻改变的人或物；
-- 轮廓强、低尺寸仍可辨认；
+- 彩色轮廓强、低尺寸仍可辨认；
 - 肖像、器物、单一建筑细节等容易建立“这里本来少了什么”的作品；
 - 1 个 Fragment 就能跑通整幅完成闭环的教学作品；
 - 修复后能触发“它不是一直都在那里吗？”之类记忆矛盾。
@@ -303,42 +312,44 @@ Museum 1 整体仍以 30% 短局、45% 标准、20% 高级、5% 专家为目标�
 
 - 必须依赖大范围 3D 探索才能理解的作品；
 - 多人物关系复杂、需要大量背景知识的群像；
-- 一开始就明确展示外星观察者或文明记忆层真相的作品；
+- 一开始就明确展示外星文明外形或解释文明记忆层全貌的作品；
 - 高难长题或 3–4 Fragment 高负担作品。
 
-建议岗位顺序：`onboarding → reinforce/question → question + echo`。
+六幅顺序必须形成 `onboarding → reinforce → question → 短局喘息 → question → echo` 的完整波形，具体岗位以正式 briefs 为准。
 
 ### 8.2 Gallery 2 / Chapter 2：烟痕画廊 —— “回声与第一座门”
 
 **入场认知：** 修复区域会产生无法解释的感官回声。
-**离场认知：** 画桥可以进入画境；里面的人与空间可能不是模拟。
-**候选数量：** 约 3 幅。
-**难度：** 10×10 / 15×15。
+**离场认知：** 画桥接通真实画境；里面的人与空间不是模拟。
+**固定数量：** 6 幅 / 10 题；`3×1 + 2×2 + 1×3`。
+**难度：** `10×10 / 15×15` 为主；英雄作品固定含 `5×5 / 10×10 / 15×15`。
 **画境模式：** 从 `echo` 升级到一幅 `limited3d` 英雄作品。
 
 适合放入：
 
 - 有明确空间纵深、入口、道路、桥梁、室内房间或可导航地标；
 - 修复对象能改变路线、声音或画中居民行为；
-- 原作允许 3–5 分钟受控探索，不需要开放世界；
-- 有 2–3 个彼此独立、语义清楚的破损，可支撑首次完整画境循环；
+- 进入后使用累计 `3–5` 分钟的受控探索预算（不含 Nonogram 解题、暂停或离开 App），不需要开放世界；
+- 英雄画作正好有 3 个彼此独立、语义清楚的破损；
 - 修复后能提供“画中居民记得上次发生的事”等可验证异常。
+
+英雄画作只使用受控路径和/或观察点、少量热点与环境声。若性能、舒适度或无障碍门失败，按 2.5D、固定观察点顺序回退，不改变三道题与叙事证据。
 
 不适合放入：
 
 - 只能作为静态平面欣赏、强行拉成立体空间会破坏构图的作品；
 - 需要高自由度移动、大量 NPC 或复杂物理才能成立的作品；
-- 同时承担画桥首秀、最高难题、外星真相和主角身世四个转折的过载作品。
+- 同时承担画桥首秀、最高难题、外星全部真相和主角身世四个转折的过载作品。
 
-建议岗位顺序：`reinforce/echo → question → turningPoint（英雄作品）`。首次完整进入画境最好在开局一小时内发生。
+六幅顺序必须让画桥在第二章投入使用，首次完整进入画境最好在开局一小时内发生。
 
 ### 8.3 Gallery 3 / Chapter 3：水下档案 —— “门后有人”
 
-**入场认知：** 画境可能真实存在，修复正在改变更多东西。
-**离场认知：** 画境先于画桥存在；白蚀是系统性、有目的的行为，某种存在已注意到人类。
-**候选数量：** 约 4 幅。
-**难度：** 15×15 为主、少量 20×20；25×25 仅作严格验证候选。
-**画境模式：** `2.5d / limited3d`，但仍由 Nonogram 驱动恢复。
+**入场认知：** 画境真实存在，修复正在改变现实记录。
+**离场认知：** 白蚀是系统性、有目的的行为，某种存在已注意到人类。
+**固定数量：** 6 幅 / 12 题；`3×1 + 1×2 + 1×3 + 1×4`。
+**难度：** `15×15` 为主、少量 `20×20`；`25×25` 只有在正式 briefs 分配且通过小屏与放弃率门时才能使用。
+**画境模式：** `2.5d / limited3d`，仍由彩色 Nonogram 驱动恢复。
 
 适合放入：
 
@@ -353,9 +364,9 @@ Museum 1 整体仍以 30% 短局、45% 标准、20% 高级、5% 专家为目标�
 - 只靠题目更大、Fragment 更多来假装高潮的作品；
 - 修复后只有“颜色更完整”而没有现实/画境后果的作品；
 - 需要引入多种全新核心机制才能成立的作品；
-- 把 Museum 2 的世界规律（跨作品通道、画桥双向、主角真相等）一次性全部揭晓的作品。
+- 展示外星文明最终外形、解释其全部社会，或提前展开画桥双向侵入与主角真相全部后果的作品。
 
-建议岗位顺序：`reveal → reinforce/echo → turningPoint → climax + foreshadow`。
+六幅顺序必须形成 `reveal → reinforce/echo → 组合应用 → 喘息 → turningPoint → climax + foreshadow`，并严格停在“对方已注意到人类”的 Museum 1 揭示上限。
 
 ## 9. 新 Chapter 与新 Museum 的概念升级规则
 
@@ -376,31 +387,31 @@ Museum 1 整体仍以 30% 短局、45% 标准、20% 高级、5% 专家为目标�
 → 新认知影响之后的选画与修复
 ```
 
-探索中的长期阶梯（不是已冻结首发承诺）：
+后续长期阶梯中只有 Museum 1 已冻结；Museum 2+ 是未来策展假设，立项时必须另行冻结：
 
 | 范围 | 主导新概念 | 作品编排变化 |
 |---|---|---|
-| Museum 1 | 白蚀 → 回声 → 画桥 → 画境非模拟 | 从单一缺失物过渡到可进入空间与现实因果证据 |
+| Museum 1 | 白蚀 → 回声 → 第二章画桥 → 画境真实 → 对方已注意人类 | 从单一缺失物过渡到有限可进入空间与现实因果证据 |
 | Museum 2 | 作品之间彼此连接 | 选择共享人物、地点、技法或意象的作品，形成跨画证据链 |
 | Museum 3 | 画桥是双向的 | 选择能表现现实被反向侵入、需要建立“文明锚”的作品 |
-| Museum 4 | 底稿、覆画与放弃版本也形成真实分支 | 选择有明确创作层、修改史的作品，支持分层/彩色 Nonogram |
+| Museum 4 | 底稿、覆画与放弃版本也形成真实分支 | 选择有明确创作层、修改史的作品，支持分层彩色语义谜题 |
 | Museum 5 | 被文明遗忘的人仍存在于作品缝隙 | 用多幅作品保存同一人的手、声音、空间和技法，重建主角身世 |
 
-新 Museum 立项时只冻结最近一馆，后续概念保持可替换，避免远期设定绑死资产生产。
+新 Museum 立项时只冻结最近一馆，后续概念保持可替换，避免远期设定绑死资产生产。外星文明最终外形与画桥是否源于对白蚀的逆向研究仍是开放剧情细节，但不能改变 Museum 1 的揭示上限。
 
 ## 10. 端到端编排与生产流程
 
 ### Step 1：Museum brief
 
-冻结本馆主题、玩家对外星文明的知识阶段、权益/版权边界、数量包络、目标难度分布、3D 与本地化预算。产物：`Museum Brief`。
+冻结本馆主题、玩家对外星文明的知识阶段、权益/版权边界、固定 `18/30` 数量、`6/8・6/10・6/12` Gallery 配额、目标难度分布、3D 与本地化预算。正式 Artwork 身份和职责从 [`MUSEUM_1_ARTWORK_BRIEFS.md`](MUSEUM_1_ARTWORK_BRIEFS.md) 读取。产物：`Museum Brief`。
 
 ### Step 2：Gallery beat sheet
 
 为每个 Gallery 写：入场认知、核心问题、允许揭示、禁止提前揭示、机制带、英雄岗位、高潮与离场认知。产物：`Gallery Beat Sheet`。
 
-### Step 3：建立候选资产池
+### Step 3：建立与补充正式资产池
 
-`bead-gen` 批量产出 `M1-CANDIDATE-10`；记录底层网格、预览、色板、来源和标签。此时不决定 Fragment。产物：`Candidate Asset Inventory`。
+`bead-gen` 按正式 18 幅 briefs 交付 `bead-pattern-v1`；若某作品未过硬门，则从扩展资产池替换，但替换后仍必须回写正式 briefs、保持计数并重新审批。每项记录 JSON、派生预览、palette、稳定 `colorId`、品牌色号/色卡版本、来源、权利和 canonical hash。产物：`Formal Asset Inventory`。
 
 ### Step 4：候选可行性门与策展卡初评分
 
@@ -414,45 +425,52 @@ Museum 1 整体仍以 30% 短局、45% 标准、20% 高级、5% 专家为目标�
 
 当前项目为每幅入围作品定义 1–4 个真实区域。每个区域先写 `damageSemantic`、视觉坐标与网格矩形，再制作损坏蒙版和恢复反馈。产物：`Damage Plan`。
 
-### Step 7：Puzzle 生产、发布门与回退
+### Step 7：彩色 Puzzle 生产、发布门与回退
 
-生成答案、clues，跑唯一解、纯逻辑和难度评分；小尺寸轮廓人工重绘，并在实机验证恢复辨识。通过后更新策展分数和状态；失败时回退破损设计、章节位置或候选池，不能通过“换到别章”掩盖多解/不可辨认问题。产物：`PuzzleDefinition + Solver Report + Curation Card (puzzleValidated)`。
+从 PuzzleDefinition JSON semantic grid（`empty | colorId`）生成 `(count,colorIndex)` clues，验证同色段至少隔一空格、异色段可直接相邻，并跑唯一精确彩色解、纯逻辑和难度评分。正式题无预填是待最终确认的推荐；教学、演示、无障碍例外必须标记。小尺寸彩色轮廓人工修整，并在实机验证颜色可区分性与恢复辨识。solution PNG 只能由 JSON 派生用于 debug。通过后写入 puzzle revision 与 puzzle semantic hash 并更新策展状态；失败时回退破损设计、章节位置或资产池，不能通过“换到别章”掩盖多解/不可辨认问题。产物：`PuzzleDefinition + Solver Report + Curation Card (puzzleValidated)`。
 
 ### Step 8：画境生产
 
-只对岗位需要的作品制作画境。当前项目负责离线生成、人工修整、碰撞、路径、热点、破损状态、声音、移动端优化与 Nonogram 对位。先完成一幅英雄作品，再复制生产方法；通过性能、舒适度和无障碍门后将状态更新为 `worldValidated`。产物：`World Package + Performance Report`。
+只对岗位需要的作品制作画境。World Labs/Marble 仅可作为离线生产工具；App 运行时不调用 API 或执行生成。当前项目负责离线生成、人工修整、版本/hash、碰撞、受控路径/观察点、少量热点、破损状态、环境声、移动端优化与彩色 Nonogram 对位。先完成《潮汐城的归桥》英雄作品：正好 3 Fragment，使用 `5×5/10×10/15×15` 彩色题；三处修复位于同一有限、固定、确定性 3D session，每完成一题就恢复对应区域；累计 `3–5` 分钟只计算移动、观察与热点交互，不含解题、暂停或离开 App。通过性能、舒适度和无障碍门后更新为 `worldValidated`；失败则回退 2.5D，再失败回退固定观察点。产物：`World Package + Performance/Accessibility Report`。
 
 ### Step 9：自动与人工验收
 
-自动检查 schema、ID、region、hash、rights、clues、唯一解、solver 和资源尺寸；人工验证时长、触控、叙事理解、恢复辨识、3D 舒适度与无障碍等价路径。状态按 `candidate → provisionallyPlaced → puzzleValidated → worldValidated（若需要）→ approved` 前进；任一门失败进入 `returned` 并注明回退目标。产物：`Content QA Report`。
+自动检查 schema、ID、region、`bead-pattern-v1`、canonical JSON、三类 semantic hashes、rights、彩色 clues、唯一精确解、纯逻辑 solver、资源尺寸及 18/30 固定计数；人工验证时长、触控、叙事理解、颜色可区分性、恢复辨识、3D 舒适度与无障碍等价路径。状态按 `candidate → provisionallyPlaced → puzzleValidated → worldValidated（若需要）→ approved` 前进；任一门失败进入 `returned` 并注明回退目标。产物：`Content QA Report`。
 
-### Step 10：冻结与变更控制
+### Step 10：冻结、迁移与变更控制
 
-冻结 `Gallery Sequence` 并写入生产审批用 `curation-manifest-v1`。编译器只接收 `approved` 记录，并把冻结顺序写入运行时 `Gallery.artworkIDs`；该顺序不替代 Story 解锁规则。换 Gallery、改变叙事岗位、增减 Fragment、改变谜题答案或画境模式都必须重新跑相关 validator、权利与叙事审查。产物：`curation-manifest-v1 + Compiled Content Manifest`。
+冻结 `Gallery Sequence` 并写入生产审批用 `curation-manifest-v1`。编译器只接收 `approved` 记录，并把冻结顺序写入运行时 `Gallery.artworkIDs`；该顺序不替代 Story 解锁规则。换 Gallery、改变叙事岗位、增减 Fragment、改变 semantic grid 或画境模式都必须重新跑相关 validator、权利与叙事审查，并保持 18/30 与各 Gallery 配额。
+
+内容更新的安全边界是：只变更元数据或派生预览且 puzzle semantic hash 不变时不影响 puzzle progress；答案变化必须创建新 puzzle revision；不得静默把旧格子状态解释成新答案。具体玩家记录政策仍待最终确认；当前候选是进行中旧局重置并提示、已完成旧 revision 记录 `completedLegacyRevision` 并允许重玩。确认前不得把该候选作为发布硬门。产物：`curation-manifest-v1 + Compiled Content Manifest + Migration Record`。
 
 ## 11. Gallery 级验收清单
 
 每个 Gallery 冻结前必须回答：
 
 - [ ] 每幅作品都有一个主要叙事岗位，没有纯填充内容；
-- [ ] 玩家入场与离场认知发生了可描述变化；
+- [ ] Gallery 数量/题量分别符合 `6/8`、`6/10`、`6/12`，全馆符合 18/30 与 `10×1 + 5×2 + 2×3 + 1×4`；
+- [ ] 玩家入场与离场认知发生了可描述变化，Museum 1 停在“消除有目的且对方已注意人类”；
 - [ ] 没有提前泄露后续 Museum 的主导概念；
 - [ ] 难度上升但不单调，没有连续长题堆叠；
 - [ ] Fragment 数来自真实破损，不来自时长指标；
 - [ ] 至少有一次清晰的恢复反馈峰值；
 - [ ] 题材、文化、人物、色彩和空间视角没有连续同质；
-- [ ] 所有谜题唯一、纯逻辑可解，并有真人试玩记录；
-- [ ] 所有作品权利、来源、hash 与人工修整记录完整；
-- [ ] 3D 画境在目标设备达到性能、舒适度与无障碍门槛；
+- [ ] 所有谜题有唯一精确彩色解、纯逻辑可解，并有真人试玩记录；
+- [ ] `(count,colorIndex)` clues、同色分隔/异色相邻规则与 JSON semantic grid 一致；
+- [ ] `bead-pattern-v1` 是 Artwork 网格/palette/物理规格的上游事实源，`blueprint-v1` 是玩家生产资料的规范事实源，PuzzleDefinition JSON 是答案唯一事实源，PNG 全部可派生重建；
+- [ ] 所有作品权利、来源、canonical hash、三类 hashes 与人工修整记录完整；
+- [ ] 3D 画境在目标设备达到性能、舒适度与无障碍门槛，或已采用通过门禁的 2.5D/固定观察点回退；
 - [ ] 整章预计时长符合 Museum brief；
+- [ ] Blueprint V1 可提供 App 内高清网格、PNG、材料清单和 Share Sheet，且不依赖 PDF；
 - [ ] 蓝图在不推进故事进度的权益路径下仍能独立使用。
 
-## 12. 当前待验证项
+## 12. 当前待验证项（不重开已冻结决策）
 
-- 100 分评分权重和 `75 / 85` 阈值需用首批候选资产校准；
-- `M1-CANDIDATE-10` 是否全部进入 Museum 1，还是部分只作技术/工坊候选；
-- `VS-PUZZLE-10` 的最终 Artwork 装配和难度分布；
-- Gallery 3 的 20×20 / 25×25 比例；
-- 每幅画境采用回声、2.5D、固定观察点或有限 3D 的成本上限；
-- 白蚀、画桥与后续 Museum 概念在转正前仍属于叙事探索；
-- `bead-pattern-v1` 的字段级 schema、hash canonicalization 与版本迁移规则。
+- 100 分评分权重和 `75 / 85` 阈值需用正式资产与英雄垂直切片校准；
+- Gallery 3 在正式 briefs 内的 `20×20 / 25×25` 具体比例仍须通过小屏和放弃率测试，但不得改变 6 幅/12 题配额；
+- 非英雄作品分别采用回声、2.5D、固定观察点或有限 3D 的成本上限；
+- 正式题无预填继续作为推荐待最终确认，教学、演示与无障碍可例外；
+- 玩家进度迁移政策仍待确认；当前候选为“进行中旧局重置并提示、已完成 legacy revision 保留并允许重玩”，但 revision/hash 不匹配时禁止静默复用旧状态；
+- 分页 PDF 可进入 V1 或 V1.1，但 Blueprint 事实源和 V1 必选输出不依赖 PDF；
+- [`BEAD_PATTERN_SPEC.md`](BEAD_PATTERN_SPEC.md) 负责冻结 `bead-pattern-v1` 字段级 schema 与 canonicalization 细节，本文件只消费该契约；
+- 画桥是否源于对白蚀的逆向研究、外星文明最终外形仍为开放剧情细节；其余 Museum 1 Canon 已冻结，不列为开放项。
