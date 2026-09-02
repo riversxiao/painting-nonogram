@@ -1,12 +1,12 @@
 # Kanaka / Painting Nonogram
 
-Kanaka 是一款面向 iPhone 与 iPad 的叙事型 Nonogram 游戏。玩家在“长夜”后的文明修复署工作，通过行列线索修复作品中真实受损的局部，并获得真正可以制作的整幅拼豆蓝图。
+Kanaka 是一款面向 iPhone 与 iPad 的叙事型彩色 Nonogram 游戏。玩家在“长夜”后的文明修复署工作，通过行列线索修复作品中真实受损的局部，并获得真正可以制作的整幅拼豆蓝图。
 
 ## 一个 App，两条平等路径
 
-首次启动先介绍“长夜”和文明修复署，随后用一局可明确跳过的 `5×5` 共同教学解释 Nonogram。完成或跳过教学后，用户可选择初始落点，并随时切换：
+首次启动先介绍“长夜”和文明修复署，随后用一局可明确跳过的 `5×5` 共同教学解释彩色 Nonogram。完成或跳过教学后，用户可选择初始落点，并随时切换：
 
-- **学徒成长 / 修复室**：解开 Nonogram、恢复作品、推进故事并亲手获得蓝图。
+- **学徒成长 / 修复室**：解开彩色 Nonogram、恢复作品、推进故事并亲手获得蓝图。
 - **专业画师 / 拼豆工坊**：使用已获得或已被授予权限的蓝图，查看色号、材料并导出制作文件，也可随时回到修复室。
 
 两条路径共享内容、进度与权益。蓝图库权益不会完成谜题、改变作品状态、推进 Gallery/Chapter、Museum 或故事进度，也不会授予“亲手修复”印章。
@@ -15,10 +15,10 @@ Kanaka 是一款面向 iPhone 与 iPad 的叙事型 Nonogram 游戏。玩家在�
 
 ```text
 Museum
-└─ Gallery（承载 Chapter 叙事；Museum 1 可 1:1 映射）
+└─ Gallery（承载 Chapter 叙事；Museum 1 为 1:1 映射）
    └─ Artwork
       └─ 1–4 Repair Fragments
-         └─ 每个 Fragment 对应一个真实破损区域和一个 Nonogram
+         └─ 每个 Fragment 对应一个真实破损区域和一个彩色 Nonogram
 ```
 
 每幅 Artwork 大部分保持完好，只为实际存在的 `1–4` 个局部破损配置 Repair Fragment。第 2–4 个仅在确有破损时存在；一旦配置，每个 Fragment 都必须完成。
@@ -39,35 +39,48 @@ hasRestorerSeal = artworkRestored
 
 专业蓝图库以 Museum 为内容与权益边界。拥有或被授予某 Museum 的蓝图库权益，可使用该馆的专业蓝图，但不承诺覆盖未来 Museum。Museum 2 是新增 Galleries、Artworks、puzzles 与 blueprints 的新范围。具体 SKU、定价及免费内容组合仍由 A-004 验证。
 
-## Museum 1 首发规划
+## Museum 1 V1 冻结范围
 
-A-005 与垂直切片验证前，Museum 1 使用以下制作包络：
+Museum 1 固定为：
 
 - `3` 个 Galleries：静默展厅、烟痕画廊、水下档案。
-- `12–18` 幅 Artworks。
-- `20–30` 个 Repair Fragment puzzles。
-- 制作基线：`15` 幅 Artworks / `24` 个 puzzles。
-- 基线示例分布：`9×1、4×2、1×3、1×4`，仅用于估算内容生产，不是商店承诺。
-- `5×5`、`10×10`、`15×15`、`20×20`，少量 `25×25`。
-- 简体中文、繁体中文、英文；日文视 A-005 与预算验证结果决定。
+- `18` 幅 Artworks、`30` 个 Repair Fragment puzzles。
+- Fragment 精确分布：`10×1 + 5×2 + 2×3 + 1×4 = 30`。
+- Gallery 精确分配：静默展厅 `6 Artworks / 8 puzzles`、烟痕画廊 `6 / 10`、水下档案 `6 / 12`。
+- 每个 Gallery 承载一个 Chapter；Museum 1 使用 1:1 映射。
 
-首批验证内容使用两个明确口径：
+V1 采用彩色 Nonogram。每条 clue 为 `(count, colorIndex)`；同色段之间至少间隔一个空格，异色段可以相邻。玩家格状态为 `unknown / excluded / filled(colorId)`。正式 PuzzleDefinition 必须具有唯一精确彩色解，并可纯逻辑完成。颜色不能成为唯一信息，线索、格状态、选择与反馈都必须提供非颜色编码。
 
-- `M1-CANDIDATE-10`：由 `bead-gen` 产出的约 `10` 幅完整 2D 候选 Artwork，用于 Museum 1 策展、画境与谜题可行性评估。
-- `VS-PUZZLE-10`：当前项目从候选作品中定义的约 `10` 个 Repair Fragment / PuzzleDefinition 技术样本，用于覆盖 1、2、3、4 Fragment 边界与整幅完成流程。
+正式内容推荐不使用预填格，但这一点**待用户最终确认**。`5×5` 教学、演示和无障碍模式可以使用预填格；任何使用预填格的完成均不计为 `completedWithoutHints`。
 
-两者均不代表首发规模。
+## Blueprint V1
 
-## 推荐技术栈
+Blueprint 的事实源必须包含完整彩色网格、稳定 `color IDs`、品牌色号、逐色数量、完成尺寸、底板布局以及 `version/hash`。V1 App 必须提供：
 
-- Swift 6.x、SwiftUI
-- SwiftUI `Canvas` + Core Graphics 棋盘
-- SwiftData 本地进度
-- StoreKit 2 权益
-- AVFoundation 音频与视频
-- OSLog、MetricKit、Swift Testing / XCTest / XCUITest
+- App 内高清彩色网格。
+- PNG 导出。
+- 材料清单。
+- 系统 Share Sheet。
 
-游戏工程只读取经过验收的图片、答案蒙版、视频、音频和元数据，不依赖素材生成仓库或生成模型。
+分页 PDF 是可选 capability，可在 V1 或 V1.1 提供；JPG 只用于预览，不作为生产文件或事实源。详细格式见 [`docs/BEAD_PATTERN_SPEC.md`](docs/BEAD_PATTERN_SPEC.md)。Museum 1 作品清单与制作 brief 见 [`docs/MUSEUM_1_ARTWORK_BRIEFS.md`](docs/MUSEUM_1_ARTWORK_BRIEFS.md)。
+
+## 世界观与英雄画作
+
+正式 canon 为“白蚀”：一种来自外星的语义消除，目标不是烧毁物质，而是抹除图像、记忆与意义之间的连接。画境是真实可进入的有限空间。主角采用 A+B 组合设定；画桥在第二章出现。Museum 1 只证明消除具有目的性，以及对方已经注意到人类，不提前揭示更大的答案。
+
+Museum 1 英雄画作《潮汐城的归桥》固定为 `3` 个 Repair Fragments，依次对应 `5×5`、`10×10`、`15×15` 彩色谜题。三处修复位于同一次有限 3D 画境 session：用户运行时实时探索预生成、固定边界、有限且确定的空间，每完成一题就恢复对应区域；累计移动、观察与热点交互预算为 `3–5` 分钟，不含 Nonogram 解题、暂停或离开 App 的时间。若移动端性能、可达性或制作质量未达门槛，回退为 `2.5D` 或固定观察点，不改变核心修复与叙事结果。
+
+## 技术路线
+
+- Swift 6.x、SwiftUI；Swift 原生为 V1 主路线。
+- SwiftUI `Canvas` + Core Graphics 彩色棋盘。
+- SwiftData 本地进度；CloudKit 延至 V1.1。
+- StoreKit 2 权益。
+- AVFoundation 音频与视频。
+- OSLog、MetricKit、Swift Testing / XCTest / XCUITest。
+- World Labs 仅用于离线内容生产；禁止在用户运行时生成内容、调用生成 API 或依赖 World Labs 服务。
+
+用户运行时的 3D 仍是实时探索，但所有世界资产均已预生成，并受固定边界、有限交互与确定性状态约束。游戏工程只读取经过验收的图片、彩色答案、世界资产、视频、音频和元数据，不依赖素材生成仓库或生成模型。
 
 ## 文档
 
@@ -75,15 +88,18 @@ A-005 与垂直切片验证前，Museum 1 使用以下制作包络：
 - [故事圣经](docs/STORY.md)
 - [游戏设计文档](docs/GAME_DESIGN_DOCUMENT.md)
 - [作品资产、章节编排与内容生产规范](docs/CONTENT_CURATION.md)
-- [世界观扩展：画境、画桥与文明消除](docs/NARRATIVE_EXPANSION.md)
-- [技术探索：Godot 与 World Labs](docs/TECH_EXPLORATION.md)
+- [Canon 详设：画境、画桥与文明消除](docs/NARRATIVE_EXPANSION.md)
+- [技术决策：Swift 原生与离线画境生产](docs/TECH_EXPLORATION.md)
 - [开发与 App Store 发布规划](docs/DEVELOPMENT_PLAN.md)
+- [拼豆图案事实源规范](docs/BEAD_PATTERN_SPEC.md)
+- [Museum 1 作品生产 Brief](docs/MUSEUM_1_ARTWORK_BRIEFS.md)
 
 ## 当前状态
 
-项目处于前期设计与技术规划阶段。首个工程目标是先导入 `M1-CANDIDATE-10`，再用 `VS-PUZZLE-10` 验证：
+项目处于前期设计与技术规划阶段。首个工程目标是用 Museum 1 冻结规格中的代表性内容验证：
 
 ```text
-内容导入 → schema 与区域校验 → 唯一解验证 → iPhone/iPad 游玩
-→ Fragment x/n → 最后一块触发整幅恢复 → 蓝图权限与印章正确派生
+内容导入 → schema、颜色与区域校验 → 唯一精确彩色解验证 → 纯逻辑验证
+→ iPhone/iPad 游玩 → Fragment x/n → 最后一块触发整幅恢复
+→ Blueprint V1 导出、权限与印章正确派生 → 有限确定性画境验证
 ```

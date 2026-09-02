@@ -1,8 +1,9 @@
 # Kanaka 开发与 App Store 发布规划
 
-> 状态：Draft v2
+> 状态：Frozen v3（V1 范围与技术决策已冻结）
 > 目标平台：iOS / iPadOS
 > 架构原则：一个 App、两个可切换路径、一个共享内容与权益模型
+> V1 固定内容：Museum 1 = `18` Artworks / `30` Fragment puzzles；Artwork Fragment 分布 `10×1 + 5×2 + 2×3 + 1×4`
 
 ## 1. 技术决策
 
@@ -13,16 +14,17 @@
 | 棋盘 | SwiftUI `Canvas` + Core Graphics；复杂手势必要时桥接 UIKit |
 | 游戏核心 | 独立 Swift Package：`KanakaCore` |
 | 内容协议 | 独立 Swift Package：`KanakaContentKit` |
-| 本地存储 | SwiftData；格子状态压缩为 `Data` |
+| 本地存储 | SwiftData；玩家格状态按每格 `UInt8` 压缩为 `Data` |
 | 权益 | StoreKit 2 + 可测试的 entitlement resolver |
 | 音视频 | AVFoundation / AVKit |
 | 动画 | SwiftUI / Core Animation；SpriteKit 仅按需 |
-| 云同步 | V1.1 可选 CloudKit |
+| 画境运行时 | Apple 原生 3D/2.5D；固定、有限、确定性资产；运行时不调用生成 API |
+| 云同步 | CloudKit 仅列入 V1.1，V1 不依赖云同步 |
 | 日志与性能 | OSLog、MetricKit、Xcode Organizer |
 | 测试 | Swift Testing / XCTest / XCUITest |
 | CI/CD | Xcode Cloud 或 GitHub Actions + TestFlight |
 
-建议 Deployment Target 为 iOS 17 / iPadOS 17，并在提交时使用 Apple 要求的最新 Xcode 与 SDK。部署目标不因构建 SDK 更新而自动提高。
+V1 使用 Swift 原生，Godot 不进入 V1 技术栈。World Labs 仅可作为离线内容生产工具；生成结果必须人工调整、版本化、优化、验证并随 App 内容发布。建议 Deployment Target 为 iOS 17 / iPadOS 17，并在提交时使用 Apple 要求的最新 Xcode 与 SDK。部署目标不因构建 SDK 更新而自动提高。
 
 ## 2. 领域层级与工程边界
 
@@ -75,9 +77,17 @@ painting-nonogram/
 └── docs/
 ```
 
-`bead-gen` 是独立的 2D 拼豆图资产生产项目。它向本项目交付经过验收的完整彩色网格 JSON、预览、调色板、来源与 hash；App 不依赖其代码、服务或模型。本项目负责 Museum/Gallery/Chapter 编排、3D 画境、破损区域、Nonogram、恢复反馈、内容包与 QA。
+`bead-gen` 是独立的 2D 拼豆图资产生产项目。它向本项目交付经过验收的 `bead-pattern-v1` JSON、派生预览、调色板、来源与 hashes；App 不依赖其代码、服务或模型。本项目负责 Museum/Gallery/Chapter 编排、3D 画境、破损区域、彩色 Nonogram、恢复反馈、内容包与 QA。
 
-Museum 1 首批资产严格区分：`M1-CANDIDATE-10` 是约 10 幅完整候选 Artwork；`VS-PUZZLE-10` 是当前项目从候选作品中定义的约 10 个 Fragment / PuzzleDefinition 技术样本。详细交接和编排流程见 [`CONTENT_CURATION.md`](CONTENT_CURATION.md)。
+`bead-pattern-v1` JSON 是完整 bead Artwork 网格、palette 与物理规格的上游事实源；`blueprint-v1` 是玩家生产资料的规范事实源。字段级规范见 [`BEAD_PATTERN_SPEC.md`](BEAD_PATTERN_SPEC.md)。固定约束如下：
+
+- 左上原点、row-major；`0 = empty`，非零值为 palette index。
+- palette 条目必须提供稳定 `colorId`、`sRGB8`、品牌色号与色卡版本；palette index 只用于文件内寻址，不是长期语义 ID。
+- 使用 canonical JSON 计算 SHA-256，计算输入不包含 `contentHash` 字段自身；结果写入 `bead-pattern-v1.contentHash`，作为 **bead asset hash**。
+- 分别记录 bead asset hash、Blueprint hash 与 puzzle semantic hash，不能用一个笼统 hash 替代三者。
+- PuzzleDefinition 的答案事实源是 JSON semantic grid：每格为 `empty` 或稳定语义 `colorId`。任何 solution PNG 仅可作为派生/debug 资源，不能参与规则、完成判断、迁移或 hash 真相计算。
+
+Museum 1 的正式范围为 `18` 幅 Artworks / `30` 个 Fragment puzzles，三个 Galleries 分别为 `6 幅/8 题`、`6/10`、`6/12`。18 幅正式作品清单与岗位由 [`MUSEUM_1_ARTWORK_BRIEFS.md`](MUSEUM_1_ARTWORK_BRIEFS.md) 维护。不再使用候选 10 幅或垂直切片 10 题作为发布范围代号。
 
 ## 4. 功能模块
 
@@ -85,17 +95,19 @@ Museum 1 首批资产严格区分：`M1-CANDIDATE-10` 是约 10 幅完整候选 
 
 不依赖 SwiftUI、StoreKit 或 SwiftData：
 
-- `PuzzleDefinition`
-- `LineClue`
-- `CellState`
-- clue generator
-- 唯一解 solver
+- `PuzzleDefinition`：答案 semantic grid 每格为 `empty | colorId`
+- `LineClue(count, colorIndex)`
+- `CellState`：`unknown | excluded | filled(colorId)`
+- V1 彩色 clue generator：同色段至少隔一空格，异色段可直接相邻
+- 唯一、精确彩色解 solver 与纯逻辑验证
 - 可解释 hint step
 - `GameSession` 状态机
 - Undo/Redo transaction
 - 完成判断
-- bitset 编解码
+- 每格 `UInt8` 玩家状态编解码（保留 unknown/excluded 值，其余编码 palette color）
 - 难度评分
+
+颜色持久语义以稳定 `colorId` 为准；文件内 `colorIndex` / palette 编码必须经 PuzzleDefinition palette 映射解析，不能把 RGB 或 UI 色值作为答案身份。正式题无预填只是推荐并待最终确认；教学、演示与无障碍流程可例外，因此核心 schema 与 solver 必须能够表达和验证预填约束。
 
 内容工具与 App 共用该包，避免编译规则和客户端规则不一致。
 
@@ -112,7 +124,7 @@ Codable schema：
 
 生产审批使用独立的 `curation-manifest-v1`。它不构成第八层运行时内容树，也不参与完成、故事或权益计算；只记录候选状态、策展证据、冻结后的 Gallery 顺序和发布门结果。编译器仅把 `approved` 记录对应的 Artwork 编入内容包，并以 `Gallery.artworkIDs` 的数组顺序作为展示顺序；解锁与 Story progress 仍由独立叙事规则决定。
 
-职责：manifest、资源引用、SHA-256 内容哈希、schema migration、权利记录引用与跨实体关系校验。编译产物可以被封装为传输包，但传输包不是产品权益边界。
+职责：manifest、资源引用、canonical JSON SHA-256、bead asset/Blueprint/puzzle semantic hashes、schema migration、权利记录引用与跨实体关系校验。`bead-pattern-v1` 的字段级契约与 canonicalization 统一见 [`BEAD_PATTERN_SPEC.md`](BEAD_PATTERN_SPEC.md)，本文件不另建冲突版本。编译产物可以被封装为传输包，但传输包不是产品权益边界。
 
 ### 4.3 App Features
 
@@ -157,12 +169,18 @@ Codable schema：
   - 修复前后资源
   - `puzzleDefinitionID`
 - `PuzzleDefinition`
-  - `id`
-  - 棋盘、答案、clues、难度数据
+  - `id` 与 `revision`
+  - 棋盘尺寸与 palette 映射
+  - JSON semantic grid：每格 `empty | colorId`
+  - 行列 `LineClue(count, colorIndex)`
+  - puzzle semantic hash、难度与纯逻辑 solver 报告
+  - 可选 prefilled constraints（正式题默认不配置是推荐而非最终硬规则；教学/演示/无障碍可例外）
 - `Blueprint`
   - `id`
   - `artworkID`
-  - 生产文件、色号、数量与材料清单引用
+  - `sourceBeadAsset = { assetId, revision, contentHash }`
+  - 完整 grid、palette、材料统计、物理规格与 export rules
+  - `revision` 与 Blueprint hash
 - `MuseumBlueprintEntitlement`
   - resolver 在运行时产出的授权值，不属于只读内容 schema
   - `museumID`
@@ -181,14 +199,22 @@ Codable schema：
 
 每个 RepairFragment 必须且只能引用一个 PuzzleDefinition；每个 Blueprint 归属于一幅 Artwork。`MuseumBlueprintEntitlementResolving` 是动态授权的唯一读取入口。商品到 Museum entitlement 的静态映射属于 StoreKit/授予配置；已验证交易或促销授予及其离线缓存属于 resolver 实现。内容文件、进度存档和 UI 均不得保存另一份可独立修改的授予状态。
 
-### 5.2 玩家持久化实体
+### 5.2 玩家持久化实体与内容迁移边界
 
 - `RepairFragmentProgress`
 - `InProgressSession`
 - `StoryState`
 - `UserPreferences`
 
-`RepairFragmentProgress` 保存稳定 Fragment ID、puzzle content hash、棋盘状态和完成信息。Artwork 修复状态从其全部 Fragment progress 派生。权益离线缓存是 `EntitlementStore` 的验证缓存，不是玩家进度实体；启动与恢复流程必须通过 resolver 对其校验和刷新。
+`RepairFragmentProgress` 保存稳定 Fragment ID、PuzzleDefinition ID、puzzle revision、puzzle semantic hash、每格 `UInt8` 玩家状态和完成信息。Artwork 修复状态从其全部 Fragment progress 派生。权益离线缓存是 `EntitlementStore` 的验证缓存，不是玩家进度实体；启动与恢复流程必须通过 resolver 对其校验和刷新。
+
+内容迁移的安全边界已经冻结：
+
+1. 只改变元数据或派生预览，且 puzzle semantic hash 不变：不影响 puzzle progress。
+2. semantic grid、palette 语义映射或任何会改变精确答案的内容发生变化：发布新的 puzzle revision 与 puzzle semantic hash，不覆盖旧答案身份。
+3. revision/hash 不匹配时，绝不静默把旧 `UInt8` 状态套用到新答案。
+
+具体玩家记录政策仍待最终确认。当前候选方案是：进行中的旧 revision 重置并在进入时提示；已完成旧 revision 保留为 `completedLegacyRevision`、继续认可 Artwork 完成并允许重玩新 revision。该候选不构成冻结通过标准；确认后必须补充显式迁移版本、可测试转换和玩家可见说明。
 
 ### 5.3 禁止持久化的派生状态
 
@@ -257,16 +283,18 @@ museums/museum-01/
         └── artworks/
             └── artwork-001/
                 ├── artwork.json
+                ├── bead-pattern-v1.json
                 ├── restored-artwork.heic
                 ├── damaged-artwork.heic
                 ├── blueprint/
                 │   ├── blueprint.json
-                │   ├── production.pdf
-                │   └── production.png
+                │   ├── production.png
+                │   └── materials.json
                 └── fragments/
                     ├── fragment-001/
                     │   ├── fragment.json
-                    │   ├── solution.png
+                    │   ├── puzzle-definition.json
+                    │   ├── solution.debug.png
                     │   ├── restored.png
                     │   ├── damaged.png
                     │   └── thumbnail.png
@@ -276,14 +304,17 @@ museums/museum-01/
 
 每个 Artwork 目录必须有 `1–4` 个 Fragment 目录。第 2–4 个只在图上确有对应破损时添加；添加后都必须参与作品完成。
 
-资源规则：
+资源与事实源规则：
 
-- `solution.png` 精确等于棋盘尺寸，不允许抗锯齿和半透明。
-- 左上原点、row-major；黑/透明为空，白为 Filled。
+- `bead-pattern-v1.json` 是完整 bead Artwork 网格、palette 与物理规格的上游事实源；`blueprint/blueprint.json` 是玩家生产资料的规范事实源；两者契约见 [`BEAD_PATTERN_SPEC.md`](BEAD_PATTERN_SPEC.md)。
+- PuzzleDefinition JSON 中的 semantic grid 是谜题答案唯一事实源，每格仅为 `empty` 或稳定 `colorId`。
+- 坐标左上原点、row-major；bead grid 使用 `0=empty`、非零 palette index，并通过 palette 条目的稳定 `colorId`、`sRGB8`、品牌色号与色卡版本解析。
+- `solution.debug.png`、预览、缩略图和导出 PNG 都是派生资源，可删除重建；不得作为答案、迁移、完成判断或 semantic hash 的输入。
+- canonical JSON SHA-256 的输入排除各自 hash 字段；bead asset、Blueprint 与 puzzle semantic hashes 分开记录。
 - Fragment `region` 使用归一化坐标，`x/y/width/height` 均在 `[0, 1]`，且区域不得越出 Artwork。
 - 受损图必须让每个配置区域可见，其余画面保持完好。
-- 小尺寸轮廓必须人工检查。
-- 完整制作蓝图只存在于 Artwork 的 blueprint 目录。
+- 小尺寸彩色轮廓与颜色可区分性必须人工检查。
+- 完整制作蓝图只存在于 Artwork 的 blueprint 目录；分页 PDF 若提供也只是派生导出，不是事实源。
 
 ## 8. 内容编译与 validator
 
@@ -292,15 +323,17 @@ museums/museum-01/
 ```text
 validate-source
 → validate-curation
+→ validate-bead-pattern-and-canonical-hashes
 → compile-museums
 → compile-galleries
 → compile-artworks
 → compile-repair-fragments
-→ generate-clues
-→ solve-and-score
+→ resolve-semantic-color-grids
+→ generate-color-clues
+→ solve-and-score-exact-color-solutions
 → validate-assets-and-rights
 → build-content-bundle
-→ write-manifest-and-hashes
+→ write-manifest-and-separated-hashes
 ```
 
 发布前必须校验：
@@ -312,9 +345,11 @@ validate-source
 5. 每个 Fragment 恰好引用一个 PuzzleDefinition。
 6. 所有配置的 Fragment IDs 都进入 Artwork 完成集合，不允许遗漏。
 7. Museum、Gallery、Artwork、RepairFragment、PuzzleDefinition、Blueprint 的 ID 在各自全局命名空间唯一，引用无悬空。
-8. 答案尺寸、重算 clues 和资源尺寸一致。
-9. 每个 puzzle 恰好一个解且可纯逻辑完成。
-10. revision、hash、本地化、人工试玩记录和权利记录完整。
+8. `bead-pattern-v1` 满足左上原点、row-major、`0=empty`、palette index 与稳定 `colorId` 映射；canonical JSON hash 可重算且不包含 `contentHash` 自身。
+9. Puzzle semantic grid 只含 `empty | colorId`，尺寸与 palette 引用有效；重算的 `(count, colorIndex)` clues 与 JSON 答案一致，同色段至少隔一空格、异色段允许直接相邻。
+10. 每个 puzzle 恰好一个精确彩色解且可纯逻辑完成；若含预填，必须属于教学、演示、无障碍例外或经正式规则确认。
+11. bead asset、Blueprint 与 puzzle semantic hashes 分离且完整；revision、迁移信息、本地化、人工试玩记录和权利记录完整。
+12. Museum 1 编译结果必须恰为 18 Artworks / 30 Fragments，Fragment 分布为 `10×1 + 5×2 + 2×3 + 1×4`，Gallery 计数依次为 `6/8`、`6/10`、`6/12`。
 
 机器校验之外，发布内容还必须存在与 Artwork 一对一映射的 `curation-manifest-v1` approved 记录：`candidateAssetID`、`artworkID`、`galleryID`、`chapterBeatID`、`sequenceIndex`、主要叙事岗位、整幅负担带、`fragmentTargets`、`worldMode`、`rightsStatus=cleared` 与完整 `evidenceRefs`。CLI 验证字段、枚举、条件必填、唯一映射、同 Gallery 顺序和引用完整性；叙事匹配、恢复辨识和画境体验由 `CONTENT_CURATION.md` 定义的人工审查负责。
 
@@ -333,9 +368,11 @@ validate-source
 
 ### 9.2 存档
 
-- 每格 2 bit：unknown / filled / excluded / reserved。
+- 玩家棋盘每格使用一个 `UInt8`：保留独立的 `unknown` 与 `excluded` 编码，其余有效值编码当前 PuzzleDefinition palette 中的颜色，并可解析回稳定 `colorId`。
+- 旧的两位元状态格式不能表达 V1 多色玩家状态；保留值、palette 上限与非法编码处理必须在 schema 中固定并由 validator 校验。
 - 自动保存采用短节流，进入后台立即 flush。
-- 记录 PuzzleDefinition ID 与 content hash。
+- 记录 PuzzleDefinition ID、revision、puzzle semantic hash 与 palette 语义映射。
+- 恢复时必须先验证 revision/hash；不匹配时禁止载入旧格子状态，并进入明确的迁移决策路径。玩家记录政策确认前，不自动重置或改写旧记录。
 - 不把每格建成 SwiftData object。
 
 ### 9.3 Fragment 完成事务
@@ -347,17 +384,18 @@ validate-source
 5. 若 `x == n`，立即触发整幅展示、Blueprint earned access 与 seal UI。
 6. Story 事件通过独立叙事规则处理，不能由 entitlement 路径触发。
 
-## 10. 蓝图输出
+## 10. Blueprint V1 输出
 
-V1 候选能力：
+V1 必须提供：
 
-- App 内高清网格。
-- PNG 导出。
-- 分页 PDF。
-- 色号、逐色数量、总豆数和底板布局。
+- App 内高清彩色网格；
+- PNG 导出；
+- 材料清单（稳定 `colorId`、品牌色号/色卡版本、逐色数量、总豆数和底板布局）；
 - 系统 Share Sheet。
 
-具体格式由 A-007 决定。导出文件生成在临时目录，分享完成后清理；文件名不包含用户个人信息。默认不为单个 Repair Fragment 生成生产文件。
+分页 PDF 可在 V1 提供，也可延后至 V1.1；无论何时提供都只是从 `bead-pattern-v1` JSON 与 Blueprint semantic data 派生的导出格式，不能成为事实源或其他必选输出的前置依赖。
+
+导出文件生成在临时目录，分享完成后清理；文件名不包含用户个人信息。默认不为单个 Repair Fragment 生成生产文件。
 
 ## 11. Museum 蓝图库权益
 
@@ -376,10 +414,14 @@ StoreKit 实现仍需监听 transaction updates、验证与恢复权益、使用
 
 ### 12.1 核心测试
 
-- clue generation。
-- 唯一解、多解、无解。
-- 空行、满行、矩形和最大尺寸。
-- bitset round trip。
+- 彩色 clue generation 与 `(count, colorIndex)` 编解码。
+- 同色段强制至少一空格、异色段直接相邻。
+- 唯一精确彩色解、多解、无解与纯逻辑可解性。
+- 空行、满行、矩形、最大尺寸与多颜色边界。
+- 每格 `UInt8` 玩家状态 round trip、palette 映射、保留值和非法值拒绝。
+- canonical JSON SHA-256 可重算且排除 `contentHash` 自身。
+- bead asset / Blueprint / puzzle semantic hash 相互独立。
+- 仅元数据/预览更新保持 puzzle progress；答案 revision 更新绝不静默复用旧状态。具体的重置/legacy 保留测试在玩家迁移政策确认后加入。
 - `GameSession` 操作序列。
 - Undo/Redo 与 hint 合法性。
 - count 为 0、1、4、5 的边界。
@@ -435,56 +477,59 @@ Release 使用不可变 tag，记录 App 版本、Museum 内容版本和 commit�
 ### M0：规则与范围冻结（1–2 周）
 
 - 固定本文领域层级、完成公式和派生状态边界。
-- 确认 Classic Nonogram 规则。
-- 为 A-004/A-005 准备验证方案。
-- 定义六类运行时内容 schema、生产用 `curation-manifest-v1` 与 entitlement resolver protocol。
-- 让 `bead-gen` 产出 `M1-CANDIDATE-10`：约 `10` 幅完整 2D 候选 Artwork，并建立策展卡。
+- 冻结 V1 彩色 Nonogram 规则：`(count,colorIndex)`、同色分隔、异色相邻、唯一精确彩色解和纯逻辑。
+- 为 A-004 准备商业验证方案；正式题无预填继续作为待最终确认的推荐，保留教学/演示/无障碍例外。
+- 定义六类运行时内容 schema、`bead-pattern-v1` 接口、生产用 `curation-manifest-v1` 与 entitlement resolver protocol。
+- 按 [`MUSEUM_1_ARTWORK_BRIEFS.md`](MUSEUM_1_ARTWORK_BRIEFS.md) 建立全部 18 幅 Artwork 的生产台账和 30 个 Fragment 目标。
 
-通过：schema 可表达 1–4 个 Repair Fragments，全部状态和权限只有一个真相来源。
+通过：schema 可表达彩色语义答案、1–4 个 Repair Fragments、独立 hashes 与 revision 安全边界，全部状态和权限只有一个真相来源。
 
 ### M1：核心与内容工具（3–4 周）
 
-- `KanakaCore`、clue generator、solver、validator。
-- `kanaka-content` CLI 与 `bead-pattern-v1` 导入边界。
-- 从候选作品中生产 `VS-PUZZLE-10`，并装配成四幅可编译 fixture Artwork，Fragment 数分别为 1、2、3、4；所有 Artwork→Fragment→PuzzleDefinition 引用必须通过 validator。
+- `KanakaCore` 彩色 clue generator、精确彩色 solver、纯逻辑验证与 validator。
+- `kanaka-content` CLI、canonical JSON/hash 与 `bead-pattern-v1` 导入边界。
+- 建立覆盖 1、2、3、4 Fragment cardinality 的编译 fixtures；其中英雄画作 fixture 固定为 3 个 Fragment 与 `5×5/10×10/15×15` 彩色题。
 
-通过：内容可一键编译；数量、区域、ID、引用或解法错误会阻断构建。
+通过：内容可一键编译；颜色语义、数量、区域、ID、hash、引用或解法错误会阻断构建。
 
 ### M2：技术原型（3–4 周，可部分并行）
 
-- App shell、Canvas 棋盘、操作手势、Undo/Redo、SwiftData 存档。
+- App shell、彩色 Canvas 棋盘、操作手势、Undo/Redo、SwiftData `UInt8` 存档。
 - Museum → Gallery → Artwork 导航。
+- 验证 revision/hash 不匹配时不会静默解释旧状态；玩家可见的重置与 legacy 重玩路径待迁移政策确认后实现。
 
 通过：iPhone/iPad 真机稳定游玩并恢复进度。
 
 ### M3：垂直切片（4–6 周）
 
 - 开场、共同教学、平等路径选择、修复室与工坊。
-- 从 M1 的四幅可编译 fixture Artwork 中选择合适作品，接入 App、双路径、完成反馈与叙事体验；不在 M3 重新装配 `VS-PUZZLE-10`。
-- 完成一幅有限 3D 进入/修复英雄作品，验证空间导航、Nonogram 对位和恢复反馈；只有在 `NARRATIVE_EXPANSION.md` 转正后，才绑定“回声 → 画桥 → 进入画境”的专名与剧情顺序。
+- 接入代表 1–4 cardinality 的 fixtures，验证双路径、完成反馈与 Canon 叙事体验。
+- 完成一幅《潮汐城的归桥》英雄作品：正好 3 Fragment，使用 `5×5`、`10×10`、`15×15` 彩色题；三处修复位于同一有限、固定、确定性 3D session，并逐题恢复对应区域；累计移动、观察和热点交互预算为 `3–5` 分钟，不含解题与暂停。
 - 验证每题只修对应区域、`x/n`、最后一题整幅展示、Blueprint 与印章。
+- 若性能、舒适度或无障碍门失败，英雄画境回退为 2.5D，再失败则回退固定观察点；谜题和叙事证据不变。
 - 验证 Museum 蓝图库权益不改变任何进度。
 - 音频、触觉与基础无障碍。
 
-通过：四种 cardinality、双路径闭环与一幅有限 3D 画境均可测试；这四幅 Artwork 不代表首发内容数量。
+通过：四种 cardinality、双路径闭环与英雄画境可测试；3D 或其正式回退方案通过性能与无障碍门。
 
 ### M4：Museum 1 完整 V1（8–10 周）
 
-A-005 和垂直切片前使用制作包络：
+固定交付：
 
 - `3` 个 Galleries。
-- `12–18` 幅 Artworks。
-- `20–30` 个 Repair Fragment puzzles。
-- 制作基线 `15` 幅 Artworks / `24` 个 puzzles。
-- 基线示例分布 `9×1、4×2、1×3、1×4`，仅用于排期和产能估算，不是商店承诺。
+- `18` 幅 Artworks。
+- `30` 个 Repair Fragment puzzles。
+- Artwork Fragment 分布 `10×1 + 5×2 + 2×3 + 1×4`。
+- Gallery 分布依次为 `6 幅/8 题`、`6/10`、`6/12`。
+- 正式清单与岗位以 [`MUSEUM_1_ARTWORK_BRIEFS.md`](MUSEUM_1_ARTWORK_BRIEFS.md) 为准。
 
-同时完成工坊、权益、本地化和权利台账。通过：Feature Complete；全部内容自动验证和人工试玩。
+同时完成工坊、V1 必选 Blueprint 输出、权益、本地化和权利台账。通过：Feature Complete；固定计数、全部内容自动验证和人工试玩均通过。
 
 ### M5：TestFlight（3–4 周）
 
 - 20–50 人测试教学、触控和双路径理解。
 - 100–300 人扩大稳定性测试。
-- 验证 A-004/A-005，调整难度、权益描述和范围。
+- 验证 A-004 的商品表达，并验证固定 `18/30` 内容的产能、难度与质量门；不通过测试静默改变已冻结范围。
 - 准备 App Store metadata。
 
 通过：Release Candidate 连续 7 天无 P0/P1；权益恢复、进度和蓝图导出无阻断。
@@ -502,30 +547,30 @@ A-005 和垂直切片前使用制作包络：
 - 建立 Swift Package 与 App 工程。
 - 定义 `museum-v1`、`gallery-v1`、`artwork-v1`、`repair-fragment-v1`、`puzzle-definition-v1`、`blueprint-v1`。
 - 冻结双路径状态模型与 Museum entitlement protocol。
-- 启动 `M1-CANDIDATE-10`：由 `bead-gen` 产出约 `10` 幅完整候选 Artwork，并为其建立来源、权利与策展卡。
-- 从候选作品中规划 `VS-PUZZLE-10` 和 1、2、3、4 Fragment 测试组合；Fragment 与谜题由当前项目定义。
+- 实现 [`BEAD_PATTERN_SPEC.md`](BEAD_PATTERN_SPEC.md) 的 `bead-pattern-v1` 解析、canonical JSON 与三类 semantic hashes。
+- 将 [`MUSEUM_1_ARTWORK_BRIEFS.md`](MUSEUM_1_ARTWORK_BRIEFS.md) 的 18 幅/30 题固定清单导入生产台账，并建立 1–4 Fragment fixtures。
 
 ### 第 2 周
 
-- clue generator、bitset、solver 初版、validator。
+- 彩色 clue generator、`UInt8` 玩家状态编码、精确彩色 solver 初版、validator。
 - 棋盘低保真原型。
 - Museum/Gallery/Artwork 内容读取。
 
 ### 第 3 周
 
-- solver 与内容 CLI。
-- 编译技术验证内容。
+- solver、纯逻辑证明与内容 CLI。
+- 编译技术验证内容，验证 JSON/PNG 事实源边界与 revision 迁移。
 - entitlement resolver 与派生权限测试。
 
 ### 第 4 周
 
-- Canvas 棋盘完整操作和本地存档。
+- 彩色 Canvas 棋盘完整操作和本地存档。
 - 简化修复室/工坊切换。
 - `x/n`、区域融回、整幅完成和印章。
 - 模拟授予 Museum 蓝图库权益，并断言故事与修复进度不变。
 - iPhone/iPad 真机验收。
 
-四周成功标准：`M1-CANDIDATE-10` 完成导入与策展初筛，`VS-PUZZLE-10` 作为技术样本通过完整编译、游玩、存档、恢复与权益测试；二者都不能被当作 Museum 1 最终首发规模。
+四周成功标准：彩色核心、`bead-pattern-v1`、三类 hashes、revision 迁移和 1–4 cardinality fixtures 通过完整编译、游玩、存档、恢复与权益测试；Museum 1 的固定 18 幅/30 题台账无计数或引用漂移。
 
 ## 16. 团队、周期与发布质量
 
@@ -545,8 +590,8 @@ A-005 和垂直切片前使用制作包络：
 
 ## 17. 后续路线
 
-- **V1.1**：CloudKit 进度同步、可选日文本地化、Museum 1 内新增内容的权益规则需由 A-004 明确。
-- **Museum 2**：新增 Galleries、Artworks、puzzles 与 blueprints；拥有独立 Museum ID 和蓝图库权益边界。
-- **后续技术**：彩色 Nonogram、织物/地图/手稿/壁画内容、签名内容下载、根据市场决定 Android。
+- **V1.1**：CloudKit 进度同步、可选日文本地化、可选分页 PDF，以及 Museum 1 内新增内容的权益规则（需由 A-004 明确）。
+- **Museum 2**：新增 Galleries、Artworks、彩色 puzzles 与 blueprints；拥有独立 Museum ID 和蓝图库权益边界。
+- **后续技术**：织物/地图/手稿/壁画内容、签名内容下载、根据市场决定 Android；任何新题型都不得破坏 V1 彩色 semantic grid 与 revision 兼容边界。
 
 任何后续 Artwork 都必须明确归属 Museum；不能以无归属的 Chapter 或主题内容绕过 Museum 权益边界。
