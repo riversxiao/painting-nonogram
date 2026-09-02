@@ -75,7 +75,9 @@ painting-nonogram/
 └── docs/
 ```
 
-素材生成方式不属于 App 架构。游戏只读取经过验收的答案蒙版、作品图、音频、视频和元数据。
+`bead-gen` 是独立的 2D 拼豆图资产生产项目。它向本项目交付经过验收的完整彩色网格 JSON、预览、调色板、来源与 hash；App 不依赖其代码、服务或模型。本项目负责 Museum/Gallery/Chapter 编排、3D 画境、破损区域、Nonogram、恢复反馈、内容包与 QA。
+
+Museum 1 首批资产严格区分：`M1-CANDIDATE-10` 是约 10 幅完整候选 Artwork；`VS-PUZZLE-10` 是当前项目从候选作品中定义的约 10 个 Fragment / PuzzleDefinition 技术样本。详细交接和编排流程见 [`CONTENT_CURATION.md`](CONTENT_CURATION.md)。
 
 ## 4. 功能模块
 
@@ -107,6 +109,8 @@ Codable schema：
 - `repair-fragment-v1`
 - `puzzle-definition-v1`
 - `blueprint-v1`
+
+生产审批使用独立的 `curation-manifest-v1`。它不构成第八层运行时内容树，也不参与完成、故事或权益计算；只记录候选状态、策展证据、冻结后的 Gallery 顺序和发布门结果。编译器仅把 `approved` 记录对应的 Artwork 编入内容包，并以 `Gallery.artworkIDs` 的数组顺序作为展示顺序；解锁与 Story progress 仍由独立叙事规则决定。
 
 职责：manifest、资源引用、SHA-256 内容哈希、schema migration、权利记录引用与跨实体关系校验。编译产物可以被封装为传输包，但传输包不是产品权益边界。
 
@@ -163,6 +167,17 @@ Codable schema：
   - resolver 在运行时产出的授权值，不属于只读内容 schema
   - `museumID`
   - 授予结果与来源标识
+- `CurationManifest`（`curation-manifest-v1`，生产审批附件，不进入运行时领域状态）
+  - `museumID`
+  - `records[]`；每条以 `candidateAssetID` 为生产主键，导入后唯一映射到 `artworkID`
+  - 章节字段：`galleryID`、`chapterBeatID`、`sequenceIndex`、`primaryNarrativeRole`、可选 `secondaryNarrativeRole`、`revealLevel`
+  - 负担与世界字段：`targetArtworkLoadBand`、`worldMode`、`restorationFeedback`
+  - `fragmentTargets[]`：`fragmentID`、`targetDifficultyBand`、`solverScore`、`estimatedMinutes`、`damageSemantic`
+  - 审批字段：`rightsStatus`、`provenance`、`curationScore`、`curationStatus`、`evidenceRefs[]`、`productionRisks[]`
+
+字段枚举、状态条件与必填阶段以 `CONTENT_CURATION.md` 6.4 为准。`approved` 记录必须有 `artworkID`、Gallery/beat/顺序、至少一个 fragment target、`rightsStatus=cleared` 和完整证据；`2.5d / limited3d` 还必须先达到 `worldValidated`。
+
+`Gallery.artworkIDs` 是编译后的展示顺序，不直接代表 Story 解锁条件。`CurationManifest` 只决定哪些内容可编译和以什么顺序展示；不能修改 RepairFragment progress、StoryState、Blueprint access 或 entitlement。
 
 每个 RepairFragment 必须且只能引用一个 PuzzleDefinition；每个 Blueprint 归属于一幅 Artwork。`MuseumBlueprintEntitlementResolving` 是动态授权的唯一读取入口。商品到 Museum entitlement 的静态映射属于 StoreKit/授予配置；已验证交易或促销授予及其离线缓存属于 resolver 实现。内容文件、进度存档和 UI 均不得保存另一份可独立修改的授予状态。
 
@@ -235,6 +250,7 @@ struct ArtworkAccessEvaluator {
 ```text
 museums/museum-01/
 ├── museum.json
+├── curation-manifest.json
 └── galleries/
     └── silent-gallery/
         ├── gallery.json
@@ -275,6 +291,7 @@ museums/museum-01/
 
 ```text
 validate-source
+→ validate-curation
 → compile-museums
 → compile-galleries
 → compile-artworks
@@ -298,6 +315,8 @@ validate-source
 8. 答案尺寸、重算 clues 和资源尺寸一致。
 9. 每个 puzzle 恰好一个解且可纯逻辑完成。
 10. revision、hash、本地化、人工试玩记录和权利记录完整。
+
+机器校验之外，发布内容还必须存在与 Artwork 一对一映射的 `curation-manifest-v1` approved 记录：`candidateAssetID`、`artworkID`、`galleryID`、`chapterBeatID`、`sequenceIndex`、主要叙事岗位、整幅负担带、`fragmentTargets`、`worldMode`、`rightsStatus=cleared` 与完整 `evidenceRefs`。CLI 验证字段、枚举、条件必填、唯一映射、同 Gallery 顺序和引用完整性；叙事匹配、恢复辨识和画境体验由 `CONTENT_CURATION.md` 定义的人工审查负责。
 
 任一失败时 CLI 返回非零并拒绝生成发布内容。
 
@@ -418,16 +437,16 @@ Release 使用不可变 tag，记录 App 版本、Museum 内容版本和 commit�
 - 固定本文领域层级、完成公式和派生状态边界。
 - 确认 Classic Nonogram 规则。
 - 为 A-004/A-005 准备验证方案。
-- 定义六类内容 schema 与 entitlement resolver protocol。
-- 从现有素材中选择 `10` 个用于技术验证。
+- 定义六类运行时内容 schema、生产用 `curation-manifest-v1` 与 entitlement resolver protocol。
+- 让 `bead-gen` 产出 `M1-CANDIDATE-10`：约 `10` 幅完整 2D 候选 Artwork，并建立策展卡。
 
 通过：schema 可表达 1–4 个 Repair Fragments，全部状态和权限只有一个真相来源。
 
 ### M1：核心与内容工具（3–4 周）
 
 - `KanakaCore`、clue generator、solver、validator。
-- `kanaka-content` CLI。
-- 用 `10` 个素材覆盖 1、2、3、4 Fragment 组合。
+- `kanaka-content` CLI 与 `bead-pattern-v1` 导入边界。
+- 从候选作品中生产 `VS-PUZZLE-10`，并装配成四幅可编译 fixture Artwork，Fragment 数分别为 1、2、3、4；所有 Artwork→Fragment→PuzzleDefinition 引用必须通过 validator。
 
 通过：内容可一键编译；数量、区域、ID、引用或解法错误会阻断构建。
 
@@ -441,12 +460,13 @@ Release 使用不可变 tag，记录 App 版本、Museum 内容版本和 commit�
 ### M3：垂直切片（4–6 周）
 
 - 开场、共同教学、平等路径选择、修复室与工坊。
-- 建议把 `10` 个技术验证素材组织为四幅 Artwork，Fragment 数量分别为 1、2、3、4。
+- 从 M1 的四幅可编译 fixture Artwork 中选择合适作品，接入 App、双路径、完成反馈与叙事体验；不在 M3 重新装配 `VS-PUZZLE-10`。
+- 完成一幅有限 3D 进入/修复英雄作品，验证空间导航、Nonogram 对位和恢复反馈；只有在 `NARRATIVE_EXPANSION.md` 转正后，才绑定“回声 → 画桥 → 进入画境”的专名与剧情顺序。
 - 验证每题只修对应区域、`x/n`、最后一题整幅展示、Blueprint 与印章。
 - 验证 Museum 蓝图库权益不改变任何进度。
 - 音频、触觉与基础无障碍。
 
-通过：四种 cardinality 和双路径闭环均可测试；这四幅 Artwork 不代表首发内容数量。
+通过：四种 cardinality、双路径闭环与一幅有限 3D 画境均可测试；这四幅 Artwork 不代表首发内容数量。
 
 ### M4：Museum 1 完整 V1（8–10 周）
 
@@ -482,7 +502,8 @@ A-005 和垂直切片前使用制作包络：
 - 建立 Swift Package 与 App 工程。
 - 定义 `museum-v1`、`gallery-v1`、`artwork-v1`、`repair-fragment-v1`、`puzzle-definition-v1`、`blueprint-v1`。
 - 冻结双路径状态模型与 Museum entitlement protocol。
-- 准备 `10` 个技术验证蒙版，并规划 1、2、3、4 Fragment 组合。
+- 启动 `M1-CANDIDATE-10`：由 `bead-gen` 产出约 `10` 幅完整候选 Artwork，并为其建立来源、权利与策展卡。
+- 从候选作品中规划 `VS-PUZZLE-10` 和 1、2、3、4 Fragment 测试组合；Fragment 与谜题由当前项目定义。
 
 ### 第 2 周
 
@@ -504,7 +525,7 @@ A-005 和垂直切片前使用制作包络：
 - 模拟授予 Museum 蓝图库权益，并断言故事与修复进度不变。
 - iPhone/iPad 真机验收。
 
-四周成功标准：现有 `10` 个素材只作为技术样本通过完整编译、游玩、存档、恢复与权益测试；不能据此推断 Museum 1 首发规模。
+四周成功标准：`M1-CANDIDATE-10` 完成导入与策展初筛，`VS-PUZZLE-10` 作为技术样本通过完整编译、游玩、存档、恢复与权益测试；二者都不能被当作 Museum 1 最终首发规模。
 
 ## 16. 团队、周期与发布质量
 
