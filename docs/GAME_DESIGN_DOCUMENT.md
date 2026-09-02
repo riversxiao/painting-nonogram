@@ -69,7 +69,9 @@ Museum
 - **Puzzle progress**：`notStarted / inProgress / completed / completedWithoutHints`；使用 Hint 或任何预填格完成时不得进入 `completedWithoutHints`。
 - **Fragment progress**：由对应 Puzzle progress 得出。
 - **Artwork restoration**：由该 Artwork 的全部 Fragment 是否完成得出。
-- **Gallery/Chapter、Museum 与 Story progress**：由叙事事件独立推进。
+- **Gallery/Chapter progress**：由实际内容完成与明确章节事件推进。
+- **Museum progress**：由实际馆藏修复与明确馆级事件推进。
+- **Story milestones**：按稳定 `storyMilestoneID` 独立记录，只由内容规范显式映射的玩法/叙事事件触发；不等同于 Puzzle、Fragment、Artwork、Gallery/Chapter、Museum 或 Blueprint access。
 - **Blueprint access**：由作品完成或 Museum 蓝图库权益得出。
 - **Restorer seal**：仅由作品完成得出。
 
@@ -89,8 +91,32 @@ hasRestorerSeal = artworkRestored
 - 可以使用该 Museum 中 Artwork 的生产文件、色号、数量和导出能力。
 - 不完成任何 Repair Fragment。
 - 不恢复任何 Artwork。
-- 不推进 Gallery/Chapter、Museum 或故事进度。
+- 不推进 Gallery/Chapter 或 Museum。
+- 不触发、满足或完成任何 Story milestone，也不发布以 entitlement / Blueprint access 为来源的叙事事件。
+- 不解锁章节过场或叙事档案。
 - 不授予“亲手修复”印章。
+
+### 5.3 Story milestone 触发边界
+
+Story milestone 与内容完成度、奖励和访问权正交。数据流必须保持：
+
+```text
+entitlement → Blueprint access（到此终止）
+Puzzle completion → Fragment progress → Artwork restoration
+显式玩法/叙事事件 → Story milestone
+```
+
+milestone 只能由内容规范明确映射的真实玩法或叙事事件触发；叙事系统可以消费实际修复、调查、定位、启动与进入事件，但不能把 Blueprint access 当作 completion。购买、授予、恢复或查看 Museum entitlement，以及浏览、导出 Blueprint，都不得触发 milestone。
+
+Museum 1 使用以下独立、稳定的 `storyMilestoneID`：
+
+- `technicalChainRestored`：仅在第一章六幅实际修复按内容映射恢复完整窄技术知识链后触发。
+- `bridgeLocated`：仅在主角依线索找到地下机器后触发。
+- `bridgeBrieflyStarted`：仅在数秒短启动/回声完成且未完整进入后触发。
+- `bridgeRebooted`：仅在第二章重启准备证据齐全、A12 入场事件完成既有画桥灾后重启后触发；触发前不得开放可探索的完整画境 session。
+- `firstPostCollapseFullEntryCompleted`：仅在 `bridgeRebooted` 已成立、主角完成 A12 同一 session 的三道修复并安全离开后触发。
+- `firstGenerationPurgeRevealed`：仅在非正面证据已确认第一代入画者在画境遇害、现实身体同步死亡，且跨作品证据已证明第一代计划遭主动清除后触发。
+- `newOperatorDetected`：仅在结尾证明对方识别新操作员、B 的隐身状态失效后触发。
 
 ## 6. 核心修复循环
 
@@ -263,7 +289,7 @@ clue = (count, colorIndex)
 
 ### 已有 Museum 蓝图库权益
 
-权益可让整幅蓝图提前可用；玩家之后完成修复时仍获得动画、故事记录和印章。权益不模拟任何进度。
+权益只让整幅蓝图提前可用。授予、恢复、查看或使用 entitlement 均不得触发、满足或完成 Story milestone，不得推进 Gallery/Chapter 或 Museum，也不得解锁章节过场或叙事档案。玩家之后通过实际修复仍可获得对应动画、由显式玩法事件产生的故事记录和印章；权益不模拟任何进度。
 
 ## 13. 商业与权益边界
 
@@ -321,11 +347,15 @@ A-004 继续验证 SKU、定价、免费序章、完整版、蓝图库权益和�
 
 - 长夜背后的威胁称为“白蚀”，是一种来自外星的语义消除。它抹除图像、记忆、名称与意义之间的连接，而不是只破坏物质表面。
 - 画境是真实存在、可以进入的有限空间，不是纯幻觉、视频或修辞隐喻。
-- 主角采用 A+B 组合设定：画师的程序性身体记忆，与童年曾被白蚀从身份记录中删除的经历共同成立。
-- 画桥在第二章出现，连接现实修复与画境。
-- Museum 1 只证明两件事：消除具有目的性；对方已经注意到人类。
+- 画桥是长夜前科学家发明的“绘画认知回溯与接驳系统”，当时被误认为神经模拟/历史重构设备。第一代入画者实际进入真实画境后被外星力量发现并杀死，现实身体同步死亡；团队、事故记录与技术意义随后遭语义消除。
+- 实体机器留在博物馆地下，被误分类为用途未知的旧扫描设备，文明断层后无法使用。
+- 第一章六幅修复依次恢复“研究员身份 → 接驳锚点 → 地下实验室位置 → 校准/维护记录”。章末主角找到机器，并凭 A 的程序性身体记忆短启动数秒、接收到回声，但没有完整进入。
+- 第二章由当前团队重新校准并重启既有画桥，完成灾后首次、也是主角首次完整进入；不是当代发明，也不是人类历史上的首次。
+- 主角采用 A+B 组合设定。B 表示主角此前被判定“已清除”而未被常规追踪；重启产生“新操作员”特征，使隐身状态失效，并非永久无法追踪。
+- Museum 1 结尾证明外星力量灾前已主动清除第一代计划，并识别到一个本应被删除的新操作员重启同一座门。
+- 画桥关键原理是否来自对白蚀的逆向研究仍开放；灾前发明、第一代计划和清除事件已经冻结。
 
-Museum 1 不揭示对方的完整身份、最终目标、文明全貌或冲突结局。后续 Gallery、档案文本与尾声不得越过这一揭示上限。
+Museum 1 不揭示对方的完整外形、社会、最终目标、文明全貌或冲突结局，也不把结尾转成战斗。后续 Gallery、档案文本与尾声不得越过这一揭示上限。
 
 ### 17.2 英雄画作
 

@@ -206,6 +206,20 @@ Codable schema：
 - `StoryState`
 - `UserPreferences`
 
+`StoryState` 将 Museum 1 Canon 建模为一组**独立、单调、可审计的 milestones**，不得用 Gallery 展示顺序、Artwork 修复布尔值或 entitlement 代替：
+
+| Milestone | 唯一叙事含义 | 必要前置 |
+|---|---|---|
+| `technicalChainRestored` | Chapter 1 六幅已按顺序恢复“研究员身份 → 接驳锚点 → 地下实验室位置 → 校准/维护记录”的完整窄技术知识链 | 对应证据事件全部成立 |
+| `bridgeLocated` | 已在博物馆地下确认被误作未知旧扫描设备的实体机器就是灾前画桥 | `technicalChainRestored` |
+| `bridgeBrieflyStarted` | 主角凭身体记忆让遗机短暂启动并收到接驳回声；没有完成接驳或进入画境 | `bridgeLocated` |
+| `bridgeRebooted` | Chapter 2 的诊断、时间同步、路径、锚点重校准与连续性/安全验证完成后，A12 入场事件在开放可探索画境前完成遗机灾后重启 | `bridgeBrieflyStarted` |
+| `firstPostCollapseFullEntryCompleted` | 主角完成 A12 同一 session 的三道修复并安全离开，达成灾后首次、也是其本人首次完整进入真实画境；不表示人类首次入画 | `bridgeRebooted` |
+| `firstGenerationPurgeRevealed` | Chapter 3 证据证明灾前第一代计划曾被主动语义清除，并以档案、生命体征中止、空操作位等非正面方式确认第一代入画者在画境遇害、现实身体同步死亡 | `firstPostCollapseFullEntryCompleted` |
+| `newOperatorDetected` | Museum 1 结尾，对方识别到按清除逻辑本应不存在的新操作员 | `firstGenerationPurgeRevealed` |
+
+milestone 写入必须幂等；重复事件不重复触发演出，越过前置的事件必须拒绝并记录内容错误。Chapter 1 离场最多到 `bridgeBrieflyStarted`，Chapter 2 离场最多到 `firstPostCollapseFullEntryCompleted`，Chapter 3/Museum 1 末依次达到 `firstGenerationPurgeRevealed` 与 `newOperatorDetected`。这些状态只由独立叙事聚合器根据已验证的 Canon 证据事件推进；当代团队发现、校准和重启灾前机器，不得产生“发明画桥”状态，主角也不得产生“人类首位入画者”状态。
+
 `RepairFragmentProgress` 保存稳定 Fragment ID、PuzzleDefinition ID、puzzle revision、puzzle semantic hash、每格 `UInt8` 玩家状态和完成信息。Artwork 修复状态从其全部 Fragment progress 派生。权益离线缓存是 `EntitlementStore` 的验证缓存，不是玩家进度实体；启动与恢复流程必须通过 resolver 对其校验和刷新。
 
 内容迁移的安全边界已经冻结：
@@ -382,7 +396,8 @@ validate-source
 3. 计算并显示 `x/n`。
 4. 只更新对应区域的修复视觉。
 5. 若 `x == n`，立即触发整幅展示、Blueprint earned access 与 seal UI。
-6. Story 事件通过独立叙事规则处理，不能由 entitlement 路径触发。
+6. Fragment/Artwork 完成只向独立叙事聚合器提交带证据 ID 的 Canon 事件；聚合器校验内容顺序与 milestone 前置后，才幂等推进 `StoryState`。
+7. entitlement resolver、购买/恢复权益、Blueprint 访问、展示顺序和跳转 UI 均不得提交 Canon 事件，也不得直接或间接触发 `technicalChainRestored`、`bridgeLocated`、`bridgeBrieflyStarted`、`bridgeRebooted`、`firstPostCollapseFullEntryCompleted`、`firstGenerationPurgeRevealed` 或 `newOperatorDetected`。
 
 ## 10. Blueprint V1 输出
 
@@ -427,11 +442,20 @@ StoreKit 实现仍需监听 transaction updates、验证与恢复权益、使用
 - count 为 0、1、4、5 的边界。
 - 全部配置 Fragment 参与完成。
 - Museum entitlement resolver。
-- entitlement 不修改进度或印章。
+- entitlement 不修改进度、印章或任何 `StoryState` milestone；购买、恢复购买、离线权益缓存刷新和 Blueprint 直接访问均不得产生 Canon 事件。
+- `StoryState` milestones 各自可独立持久化、幂等 round trip，重复证据不重复触发演出。
+- 正序测试：`technicalChainRestored → bridgeLocated → bridgeBrieflyStarted → bridgeRebooted → firstPostCollapseFullEntryCompleted → firstGenerationPurgeRevealed → newOperatorDetected` 逐步成功，每步只改变目标 milestone。
+- 逆序/跳步测试：任一 milestone 缺少直接或间接前置时拒绝；尤其 Chapter 1 事件不能设置 `bridgeRebooted` 或 `firstPostCollapseFullEntryCompleted`，A12 前五幅准备证据不足时不能设置 `bridgeRebooted` 或打开完整接驳 session，A18 最后一个 Fragment 前不能设置 `firstGenerationPurgeRevealed` 或 `newOperatorDetected`。
+- 文案语义测试：`firstPostCollapseFullEntryCompleted` 只表示“灾后/主角首次完整进入”，不得派生“人类首次入画”；`bridgeRebooted` 不得派生“当代团队发明画桥”。
 
 ### 12.2 内容测试
 
-每次构建运行全量 schema、关系、ID、区域、solver、clue、资源、本地化、hash 和 rights 校验。
+每次构建运行全量 schema、关系、ID、区域、solver、clue、资源、本地化、hash 和 rights 校验，并运行 Museum 1 Canon 顺序 validator：
+
+- G1 A01–A06 只能按“研究员身份 → 接驳锚点 → 地下实验室位置 → 校准/维护记录 → 遗机短启动/回声”提供证据，离场不得完整接驳；
+- G2 A07–A11 必须覆盖重启准备；准备证据齐全后，A12 入场事件先标记 `bridgeRebooted` 才能开放同一可探索 session，三题全部完成并安全离开后才标记 `firstPostCollapseFullEntryCompleted`；
+- G3 A13–A17 必须逐步建立第一代团队、真实接驳、画境内遇害/现实同步死亡及主动清除的交叉证据，但不得提前完成正式揭示；A18 最后一个 Fragment 汇总证据后先标记 `firstGenerationPurgeRevealed`，再由接驳端识别事件标记 `newOperatorDetected`；
+- 任何内容不得把当代团队定义为发明者、把主角定义为人类首位入画者，或用战斗/正面死亡场面承担修复反馈。
 
 ### 12.3 UI 测试
 
@@ -442,6 +466,9 @@ StoreKit 实现仍需监听 transaction updates、验证与恢复权益、使用
 - 一个 Fragment 的 Artwork 完成一题立即触发整幅完成。
 - 多 Fragment Artwork 仅在最后一题后展示整幅、授予 Blueprint 与印章。
 - 拥有 Museum 蓝图库权益时生产文件可用，但所有修复与故事进度保持原值。
+- Chapter 1 末只播放遗机短启动/接驳回声，不能进入可探索画境；Chapter 2 A12 前置未满足时 UI 不允许设置 `bridgeRebooted`，也不打开完整接驳 session。
+- A12 入场事件先显示遗机完成灾后重启，再开放同一可探索 session；三题全部完成并安全离开后，才显示主角完成灾后及本人首次完整进入。Chapter 3/A18 最后一个 Fragment 后按顺序显示第一代遇害/同步死亡与计划主动清除的组合证据获证，再显示新操作员被识别。
+- 第一代死亡通过档案、生命体征与空操作位等非正面 UI 呈现；修复和画境交互均无战斗态。
 - Reduce Motion、Dynamic Type、VoiceOver 关键路径。
 
 ### 12.4 性能目标
@@ -481,8 +508,9 @@ Release 使用不可变 tag，记录 App 版本、Museum 内容版本和 commit�
 - 为 A-004 准备商业验证方案；正式题无预填继续作为待最终确认的推荐，保留教学/演示/无障碍例外。
 - 定义六类运行时内容 schema、`bead-pattern-v1` 接口、生产用 `curation-manifest-v1` 与 entitlement resolver protocol。
 - 按 [`MUSEUM_1_ARTWORK_BRIEFS.md`](MUSEUM_1_ARTWORK_BRIEFS.md) 建立全部 18 幅 Artwork 的生产台账和 30 个 Fragment 目标。
+- 定义独立、单调的 `StoryState` milestones、Canon 事件证据、前置顺序、幂等写入与 entitlement 隔离。
 
-通过：schema 可表达彩色语义答案、1–4 个 Repair Fragments、独立 hashes 与 revision 安全边界，全部状态和权限只有一个真相来源。
+通过：schema 可表达彩色语义答案、1–4 个 Repair Fragments、独立 hashes 与 revision 安全边界；`StoryState` 可独立表达 `technicalChainRestored`、`bridgeLocated`、`bridgeBrieflyStarted`、`bridgeRebooted`、`firstPostCollapseFullEntryCompleted`、`firstGenerationPurgeRevealed`、`newOperatorDetected`，且顺序/跳步/重复/entitlement 隔离测试通过；全部状态和权限只有一个真相来源。
 
 ### M1：核心与内容工具（3–4 周）
 
@@ -504,13 +532,15 @@ Release 使用不可变 tag，记录 App 版本、Museum 内容版本和 commit�
 
 - 开场、共同教学、平等路径选择、修复室与工坊。
 - 接入代表 1–4 cardinality 的 fixtures，验证双路径、完成反馈与 Canon 叙事体验。
-- 完成一幅《潮汐城的归桥》英雄作品：正好 3 Fragment，使用 `5×5`、`10×10`、`15×15` 彩色题；三处修复位于同一有限、固定、确定性 3D session，并逐题恢复对应区域；累计移动、观察和热点交互预算为 `3–5` 分钟，不含解题与暂停。
+- 垂直切片从 Chapter 1 离场存档开始：已具备 `technicalChainRestored`、`bridgeLocated` 与 `bridgeBrieflyStarted`，且明确只发生过遗机短启动/接驳回声，没有完整进入。
+- 用 A07–A11 fixture 依次验证遗机诊断、时间同步、接驳路径、锚点重校准与连续性/安全验证；缺任一证据都不能推进灾后重启。
+- 完成一幅《潮汐城的归桥》英雄作品：正好 3 Fragment，使用 `5×5`、`10×10`、`15×15` 彩色题；A07–A11 证据齐全后，A12 入场事件先设置 `bridgeRebooted`，再开放同一有限、固定、确定性 3D session；三处修复在该 session 内逐题恢复对应区域，累计移动、观察和热点交互预算为 `3–5` 分钟，不含解题与暂停。完成三题并安全离开 session 后才设置 `firstPostCollapseFullEntryCompleted`，文案限定为灾后及主角本人首次完整进入，不得表述成人类首次入画或当代发明。
 - 验证每题只修对应区域、`x/n`、最后一题整幅展示、Blueprint 与印章。
 - 若性能、舒适度或无障碍门失败，英雄画境回退为 2.5D，再失败则回退固定观察点；谜题和叙事证据不变。
 - 验证 Museum 蓝图库权益不改变任何进度。
 - 音频、触觉与基础无障碍。
 
-通过：四种 cardinality、双路径闭环与英雄画境可测试；3D 或其正式回退方案通过性能与无障碍门。
+通过：四种 cardinality、双路径闭环与英雄画境可测试；3D 或其正式回退方案通过性能与无障碍门；Chapter 1 短启动状态不能越级完整进入，A07–A12 的重校准/重启顺序测试通过，且 entitlement 操作前后七个 Story milestones 完全不变。
 
 ### M4：Museum 1 完整 V1（8–10 周）
 
@@ -523,7 +553,16 @@ Release 使用不可变 tag，记录 App 版本、Museum 内容版本和 commit�
 - Gallery 分布依次为 `6 幅/8 题`、`6/10`、`6/12`。
 - 正式清单与岗位以 [`MUSEUM_1_ARTWORK_BRIEFS.md`](MUSEUM_1_ARTWORK_BRIEFS.md) 为准。
 
-同时完成工坊、V1 必选 Blueprint 输出、权益、本地化和权利台账。通过：Feature Complete；固定计数、全部内容自动验证和人工试玩均通过。
+同时完成工坊、V1 必选 Blueprint 输出、权益、本地化和权利台账。
+
+Museum 1 Canon 验收同时要求：
+
+- G1 六幅只恢复窄技术链，并以地下遗机被确认、身体记忆短启动和接驳回声离场；不得完整进入；
+- G2 A07–A11 完成重启准备，A12 入场事件先完成灾后重启再开放可探索 session；三题全部完成并安全离开后，主角的灾后首次完整进入才成立，且明确当代团队不是发明者、主角不是人类首位入画者；
+- G3 A13–A17 以档案、生命体征、空操作位等非正面证据逐步建立第一代团队、遇害/同步死亡与清除审计链，但不提前完成正式揭示；A18 最后一个 Fragment 后先使 `firstGenerationPurgeRevealed` 成立，再触发 `newOperatorDetected`；
+- 修复、回声、接驳与画境探索保持非战斗，entitlement 全程不能推进任何 milestone。
+
+通过：Feature Complete；固定计数、全部内容自动验证和人工试玩均通过；七个 `StoryState` milestones 的正序、禁止跳步、幂等、章节上限和 entitlement 隔离验收全部通过。
 
 ### M5：TestFlight（3–4 周）
 
