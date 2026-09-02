@@ -51,7 +51,12 @@ A-005 与垂直切片验证前，Museum 1 使用以下制作包络：
 - `5×5`、`10×10`、`15×15`、`20×20`，少量 `25×25`。
 - 简体中文、繁体中文、英文；日文视 A-005 与预算验证结果决定。
 
-现有 `10` 个素材只用于技术验证，不代表首发规模。它们应被编排为能覆盖 1、2、3、4 个 Fragment 边界与整幅完成流程的测试内容。
+首批验证内容使用两个明确口径：
+
+- `M1-CANDIDATE-10`：由 `bead-gen` 产出的约 `10` 幅完整 2D 候选 Artwork，用于 Museum 1 策展、画境与谜题可行性评估。
+- `VS-PUZZLE-10`：当前项目从候选作品中定义的约 `10` 个 Repair Fragment / PuzzleDefinition 技术样本，用于覆盖 1、2、3、4 Fragment 边界与整幅完成流程。
+
+两者均不代表首发规模。
 
 ## 推荐技术栈
 
@@ -69,11 +74,14 @@ A-005 与垂直切片验证前，Museum 1 使用以下制作包络：
 - [产品对齐决策](docs/ALIGNMENT_DECISIONS.md)
 - [故事圣经](docs/STORY.md)
 - [游戏设计文档](docs/GAME_DESIGN_DOCUMENT.md)
+- [作品资产、章节编排与内容生产规范](docs/CONTENT_CURATION.md)
+- [世界观扩展：画境、画桥与文明消除](docs/NARRATIVE_EXPANSION.md)
+- [技术探索：Godot 与 World Labs](docs/TECH_EXPLORATION.md)
 - [开发与 App Store 发布规划](docs/DEVELOPMENT_PLAN.md)
 
 ## 当前状态
 
-项目处于前期设计与技术规划阶段。首个工程目标是用现有 `10` 个素材验证：
+项目处于前期设计与技术规划阶段。首个工程目标是先导入 `M1-CANDIDATE-10`，再用 `VS-PUZZLE-10` 验证：
 
 ```text
 内容导入 → schema 与区域校验 → 唯一解验证 → iPhone/iPad 游玩
