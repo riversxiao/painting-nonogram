@@ -85,7 +85,7 @@ painting-nonogram/
 - palette 条目必须提供稳定 `colorId`、`sRGB8`、品牌色号与色卡版本；palette index 只用于文件内寻址，不是长期语义 ID。
 - 使用 canonical JSON 计算 SHA-256，计算输入不包含 `contentHash` 字段自身；结果写入 `bead-pattern-v1.contentHash`，作为 **bead asset hash**。
 - 分别记录 bead asset hash、Blueprint hash 与 puzzle semantic hash，不能用一个笼统 hash 替代三者。
-- PuzzleDefinition 的答案事实源是 JSON semantic grid：每格为 `empty` 或稳定语义 `colorId`。任何 solution PNG 仅可作为派生/debug 资源，不能参与规则、完成判断、迁移或 hash 真相计算。
+- PuzzleDefinition 的答案事实源是 JSON semantic grid：每格为 `empty` 或稳定语义 `colorId`。任何 solution PNG 仅可作为派生/debug 资源，不能参与规则、完成判断、迁移或 hash 真相计算。字段、semantic hash 与 solver 发布门统一见 [`PUZZLE_DEFINITION_SPEC.md`](PUZZLE_DEFINITION_SPEC.md)。
 
 Museum 1 的正式范围为 `18` 幅 Artworks / `30` 个 Fragment puzzles，三个 Galleries 分别为 `6 幅/8 题`、`6/10`、`6/12`。18 幅正式作品清单与岗位由 [`MUSEUM_1_ARTWORK_BRIEFS.md`](MUSEUM_1_ARTWORK_BRIEFS.md) 维护。不再使用候选 10 幅或垂直切片 10 题作为发布范围代号。
 
@@ -107,7 +107,7 @@ Museum 1 的正式范围为 `18` 幅 Artworks / `30` 个 Fragment puzzles，三�
 - 每格 `UInt8` 玩家状态编解码（保留 unknown/excluded 值，其余编码 palette color）
 - 难度评分
 
-颜色持久语义以稳定 `colorId` 为准；文件内 `colorIndex` / palette 编码必须经 PuzzleDefinition palette 映射解析，不能把 RGB 或 UI 色值作为答案身份。正式题无预填只是推荐并待最终确认；教学、演示与无障碍流程可例外，因此核心 schema 与 solver 必须能够表达和验证预填约束。
+颜色持久语义以稳定 `colorId` 为准；文件内 `colorIndex` / palette 编码必须经 PuzzleDefinition palette 映射解析，不能把 RGB 或 UI 色值作为答案身份。正式题不使用预填格，必须在无预填条件下通过唯一解与纯逻辑验证；教学、演示与无障碍辅助可例外，预填属于具体游玩 Session 的辅助层，核心 schema 与 solver 必须能够表达、验证并记录预填来源。
 
 内容工具与 App 共用该包，避免编译规则和客户端规则不一致。
 
@@ -147,23 +147,23 @@ Codable schema：
 ### 5.1 内容实体
 
 - `Museum`
-  - `id`
+  - `id` 与 `revision`
   - 本地化元数据
   - `galleryIDs`
 - `Gallery`
-  - `id`
+  - `id` 与 `revision`
   - `museumID`
   - `chapterNarrativeID`（叙事映射，不形成另一层内容树）
   - `artworkIDs`
 - `Artwork`
-  - `id`
+  - `id` 与 `revision`
   - `museumID`
   - `galleryID`
   - 完整图与受损图资源
   - `repairFragmentIDs`，数量必须为 `1...4`
   - `blueprintID`
 - `RepairFragment`
-  - `id`
+  - `id` 与 `revision`
   - `artworkID`
   - 归一化 `region`
   - 修复前后资源
@@ -174,7 +174,7 @@ Codable schema：
   - JSON semantic grid：每格 `empty | colorId`
   - 行列 `LineClue(count, colorIndex)`
   - puzzle semantic hash、难度与纯逻辑 solver 报告
-  - 可选 prefilled constraints（正式题默认不配置是推荐而非最终硬规则；教学/演示/无障碍可例外）
+  - 可选 prefilled constraints（正式题禁止配置；仅教学/演示/无障碍辅助可例外，并记录来源）
 - `Blueprint`
   - `id`
   - `artworkID`
@@ -197,7 +197,7 @@ Codable schema：
 
 `Gallery.artworkIDs` 是编译后的展示顺序，不直接代表 Story 解锁条件。`CurationManifest` 只决定哪些内容可编译和以什么顺序展示；不能修改 RepairFragment progress、StoryState、Blueprint access 或 entitlement。
 
-每个 RepairFragment 必须且只能引用一个 PuzzleDefinition；每个 Blueprint 归属于一幅 Artwork。`MuseumBlueprintEntitlementResolving` 是动态授权的唯一读取入口。商品到 Museum entitlement 的静态映射属于 StoreKit/授予配置；已验证交易或促销授予及其离线缓存属于 resolver 实现。内容文件、进度存档和 UI 均不得保存另一份可独立修改的授予状态。
+每个 RepairFragment 必须且只能引用一个 PuzzleDefinition；编译后的运行时内容包中，每个 PuzzleDefinition 也必须被且仅被一个 RepairFragment 引用，禁止孤儿题目或跨 Fragment 共享题目身份。每个 Blueprint 归属于一幅 Artwork。`MuseumBlueprintEntitlementResolving` 是动态授权的唯一读取入口。商品到 Museum entitlement 的静态映射属于 StoreKit/授予配置；已验证交易或促销授予及其离线缓存属于 resolver 实现。内容文件、进度存档和 UI 均不得保存另一份可独立修改的授予状态。
 
 ### 5.2 玩家持久化实体与内容迁移边界
 
@@ -356,12 +356,12 @@ validate-source
 2. 每个 Artwork 恰好归属于一个 Gallery，且 `museumID` 与 Gallery 一致。
 3. 每个 Artwork 的 RepairFragment count 在 `1...4`。
 4. 每个 Fragment 区域坐标有效、面积大于零且完整位于 Artwork 内。
-5. 每个 Fragment 恰好引用一个 PuzzleDefinition。
+5. 每个 Fragment 恰好引用一个 PuzzleDefinition；每个编入包的 PuzzleDefinition 也恰好归属于一个 Fragment，不允许孤儿或共享题目身份。
 6. 所有配置的 Fragment IDs 都进入 Artwork 完成集合，不允许遗漏。
 7. Museum、Gallery、Artwork、RepairFragment、PuzzleDefinition、Blueprint 的 ID 在各自全局命名空间唯一，引用无悬空。
 8. `bead-pattern-v1` 满足左上原点、row-major、`0=empty`、palette index 与稳定 `colorId` 映射；canonical JSON hash 可重算且不包含 `contentHash` 自身。
 9. Puzzle semantic grid 只含 `empty | colorId`，尺寸与 palette 引用有效；重算的 `(count, colorIndex)` clues 与 JSON 答案一致，同色段至少隔一空格、异色段允许直接相邻。
-10. 每个 puzzle 恰好一个精确彩色解且可纯逻辑完成；若含预填，必须属于教学、演示、无障碍例外或经正式规则确认。
+10. 每个正式 puzzle 在无预填条件下恰好一个精确彩色解且可纯逻辑完成；若含预填，必须属于明确标记的教学、演示或无障碍辅助例外。
 11. bead asset、Blueprint 与 puzzle semantic hashes 分离且完整；revision、迁移信息、本地化、人工试玩记录和权利记录完整。
 12. Museum 1 编译结果必须恰为 18 Artworks / 30 Fragments，Fragment 分布为 `10×1 + 5×2 + 2×3 + 1×4`，Gallery 计数依次为 `6/8`、`6/10`、`6/12`。
 
@@ -379,14 +379,20 @@ validate-source
 - 拖动起始动作在 transaction 内保持一致。
 - 两指手势取消正在进行的绘制。
 - 一次拖动形成一个 Undo transaction。
+- `GameSession.applyBatch` 原子校验并提交一次点击或拖动；重复坐标、越界格、未知颜色或作者预填锁定格使整批失败。
+- no-op 不写入历史；新 transaction 清空 Redo；Undo/Redo 在本次运行内不限次数，不跨启动持久化。
+- 答案颜色格必须精确匹配稳定 `colorId`；答案 empty 可由 `unknown` 或 `excluded` 满足，但任何 filled 都不满足。
+- authored prefill 与已实际交付的 hint/dynamic reveal/accessibility prefill 形成单调 assistance history；Undo 不恢复 `completedWithoutHints` 资格。
 
 ### 9.2 存档
 
-- 玩家棋盘每格使用一个 `UInt8`：保留独立的 `unknown` 与 `excluded` 编码，其余有效值编码当前 PuzzleDefinition palette 中的颜色，并可解析回稳定 `colorId`。
-- 旧的两位元状态格式不能表达 V1 多色玩家状态；保留值、palette 上限与非法编码处理必须在 schema 中固定并由 validator 校验。
+- `cell-state-codec-v1` 每格使用一个 `UInt8`：`0 = unknown`、`1 = excluded`、`2...255 = filled(colorIndex = byte - 1)`；palette 最多 `254` 色，并必须解析回稳定 `colorId`。
+- 旧的两位元状态格式不能表达 V1 多色玩家状态；cell count、palette 连续索引、未知 colorId 与越界 byte 必须严格拒绝，不能静默降级为 unknown。
 - 自动保存采用短节流，进入后台立即 flush。
 - 记录 PuzzleDefinition ID、revision、puzzle semantic hash 与 palette 语义映射。
-- 恢复时必须先验证 revision/hash；不匹配时禁止载入旧格子状态，并进入明确的迁移决策路径。玩家记录政策确认前，不自动重置或改写旧记录。
+- 恢复时必须先验证 codec version、PuzzleDefinition ID、revision、semantic hash、尺寸/cell count 和 palette 语义映射；不匹配时禁止解码或载入旧格子状态，并进入明确的迁移决策路径。
+- semantic hash 相同但 revision 不同也先返回独立 migration decision，不静默恢复；玩家记录政策确认前，不自动重置或改写旧记录。
+- snapshot 保存当前 cells 与 assistance history；Undo/Redo history 仅内存，不进入持久化。
 - 不把每格建成 SwiftData object。
 
 ### 9.3 Fragment 完成事务
@@ -505,7 +511,7 @@ Release 使用不可变 tag，记录 App 版本、Museum 内容版本和 commit�
 
 - 固定本文领域层级、完成公式和派生状态边界。
 - 冻结 V1 彩色 Nonogram 规则：`(count,colorIndex)`、同色分隔、异色相邻、唯一精确彩色解和纯逻辑。
-- 为 A-004 准备商业验证方案；正式题无预填继续作为待最终确认的推荐，保留教学/演示/无障碍例外。
+- 为 A-004 准备商业验证方案；冻结正式题无预填发布门，保留教学/演示/无障碍辅助例外。
 - 定义六类运行时内容 schema、`bead-pattern-v1` 接口、生产用 `curation-manifest-v1` 与 entitlement resolver protocol。
 - 按 [`MUSEUM_1_ARTWORK_BRIEFS.md`](MUSEUM_1_ARTWORK_BRIEFS.md) 建立全部 18 幅 Artwork 的生产台账和 30 个 Fragment 目标。
 - 定义独立、单调的 `StoryState` milestones、Canon 事件证据、前置顺序、幂等写入与 entitlement 隔离。

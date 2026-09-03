@@ -1,0 +1,13 @@
+{
+  "schema": "gallery-v1",
+  "id": "dev-gallery-cardinality",
+  "revision": 1,
+  "museumID": "dev-museum-cardinality",
+  "chapterNarrativeID": "dev-chapter-cardinality",
+  "artworkIDs": [
+    "dev-artwork-cardinality-1",
+    "dev-artwork-cardinality-2",
+    "dev-artwork-cardinality-3",
+    "dev-artwork-cardinality-4"
+  ]
+}

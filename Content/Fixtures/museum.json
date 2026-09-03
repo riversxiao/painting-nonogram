@@ -1,0 +1,6 @@
+{
+  "schema": "museum-v1",
+  "id": "dev-museum-cardinality",
+  "revision": 1,
+  "galleryIDs": ["dev-gallery-cardinality"]
+}
