@@ -1,0 +1,13 @@
+{
+  "schema": "puzzle-definition-v1",
+  "id": "dev-a4-f03-p01",
+  "revision": 1,
+  "kind": "formal",
+  "rulesVersion": "colored-nonogram-v1",
+  "solverVersion": "line-candidate-intersection-v1",
+  "palette": [{"colorIndex": 1, "colorId": "archive-blue", "sRGB8": {"r": 44, "g": 76, "b": 112}, "accessibilitySymbol": "A"}],
+  "solution": {"origin": "top-left", "order": "row-major", "width": 1, "height": 1, "cells": ["archive-blue"]},
+  "clues": {"rows": [[{"count": 1, "colorIndex": 1}]], "columns": [[{"count": 1, "colorIndex": 1}]]},
+  "prefilledCells": [],
+  "semanticHash": "sha256:0bf5653408d83b845c3f0d5dae3a01e7e2a64af6677ee0a16b5a59095d6843c5"
+}

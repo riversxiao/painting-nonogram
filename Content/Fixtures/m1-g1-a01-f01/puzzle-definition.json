@@ -1,0 +1,53 @@
+{
+  "schema": "puzzle-definition-v1",
+  "id": "m1-g1-a01-f01-p01",
+  "revision": 1,
+  "kind": "formal",
+  "rulesVersion": "colored-nonogram-v1",
+  "solverVersion": "line-candidate-intersection-v1",
+  "palette": [
+    {
+      "colorIndex": 1,
+      "colorId": "archive-blue",
+      "sRGB8": {"r": 44, "g": 76, "b": 112},
+      "accessibilitySymbol": "A"
+    },
+    {
+      "colorIndex": 2,
+      "colorId": "restoration-gold",
+      "sRGB8": {"r": 221, "g": 169, "b": 72},
+      "accessibilitySymbol": "B"
+    }
+  ],
+  "solution": {
+    "origin": "top-left",
+    "order": "row-major",
+    "width": 5,
+    "height": 5,
+    "cells": [
+      "archive-blue", "archive-blue", "archive-blue", "archive-blue", "archive-blue",
+      "archive-blue", "restoration-gold", "restoration-gold", "restoration-gold", "archive-blue",
+      "archive-blue", "restoration-gold", null, "restoration-gold", "archive-blue",
+      "archive-blue", "restoration-gold", "restoration-gold", "restoration-gold", "archive-blue",
+      "archive-blue", "archive-blue", "archive-blue", "archive-blue", "archive-blue"
+    ]
+  },
+  "clues": {
+    "rows": [
+      [{"count": 5, "colorIndex": 1}],
+      [{"count": 1, "colorIndex": 1}, {"count": 3, "colorIndex": 2}, {"count": 1, "colorIndex": 1}],
+      [{"count": 1, "colorIndex": 1}, {"count": 1, "colorIndex": 2}, {"count": 1, "colorIndex": 2}, {"count": 1, "colorIndex": 1}],
+      [{"count": 1, "colorIndex": 1}, {"count": 3, "colorIndex": 2}, {"count": 1, "colorIndex": 1}],
+      [{"count": 5, "colorIndex": 1}]
+    ],
+    "columns": [
+      [{"count": 5, "colorIndex": 1}],
+      [{"count": 1, "colorIndex": 1}, {"count": 3, "colorIndex": 2}, {"count": 1, "colorIndex": 1}],
+      [{"count": 1, "colorIndex": 1}, {"count": 1, "colorIndex": 2}, {"count": 1, "colorIndex": 2}, {"count": 1, "colorIndex": 1}],
+      [{"count": 1, "colorIndex": 1}, {"count": 3, "colorIndex": 2}, {"count": 1, "colorIndex": 1}],
+      [{"count": 5, "colorIndex": 1}]
+    ]
+  },
+  "prefilledCells": [],
+  "semanticHash": "sha256:a0b61985ecc8fc6277749a78eac116273a7000b28a7641aa0c71eb3546a8847d"
+}

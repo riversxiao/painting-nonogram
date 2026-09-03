@@ -258,7 +258,7 @@ Gallery 2 的 `1×3` 槽位用于英雄画作《潮汐城的归桥》，正好�
 
 Fragment 多不代表单题难，也不自动属于后期。四个简单彩色 Fragment 可以是低逻辑难度但高总时长；一个 20×20 彩色 Fragment 可以是高难度但短叙事节点。
 
-所有 V1 正式题都必须具有唯一、精确的彩色解并可纯逻辑完成。正式题无预填是推荐、尚待最终确认；教学、演示与无障碍流程可例外，例外必须在 manifest 和试玩证据中标记。
+所有 V1 正式题都不使用预填格，并必须在无预填条件下具有唯一、精确的彩色解且可纯逻辑完成。教学、演示与无障碍辅助可例外，例外必须记录预填来源并在 manifest 和试玩证据中标记。
 
 ### 7.2 章节内难度波形
 
@@ -429,7 +429,7 @@ Museum 1 整体仍以 30% 短局、45% 标准、20% 高级、5% 专家为目标�
 
 ### Step 7：彩色 Puzzle 生产、发布门与回退
 
-从 PuzzleDefinition JSON semantic grid（`empty | colorId`）生成 `(count,colorIndex)` clues，验证同色段至少隔一空格、异色段可直接相邻，并跑唯一精确彩色解、纯逻辑和难度评分。正式题无预填是待最终确认的推荐；教学、演示、无障碍例外必须标记。小尺寸彩色轮廓人工修整，并在实机验证颜色可区分性与恢复辨识。solution PNG 只能由 JSON 派生用于 debug。通过后写入 puzzle revision 与 puzzle semantic hash 并更新策展状态；失败时回退破损设计、章节位置或资产池，不能通过“换到别章”掩盖多解/不可辨认问题。产物：`PuzzleDefinition + Solver Report + Curation Card (puzzleValidated)`。
+从 PuzzleDefinition JSON semantic grid（`empty | colorId`）生成 `(count,colorIndex)` clues，验证同色段至少隔一空格、异色段可直接相邻，并跑唯一精确彩色解、纯逻辑和难度评分。正式题禁止预填；教学、演示、无障碍辅助例外必须记录来源并明确标记。小尺寸彩色轮廓人工修整，并在实机验证颜色可区分性与恢复辨识。solution PNG 只能由 JSON 派生用于 debug。通过后写入 puzzle revision 与 puzzle semantic hash 并更新策展状态；失败时回退破损设计、章节位置或资产池，不能通过“换到别章”掩盖多解/不可辨认问题。产物：`PuzzleDefinition + Solver Report + Curation Card (puzzleValidated)`。
 
 ### Step 8：画境生产
 
@@ -471,7 +471,6 @@ Museum 1 整体仍以 30% 短局、45% 标准、20% 高级、5% 专家为目标�
 - 100 分评分权重和 `75 / 85` 阈值需用正式资产与英雄垂直切片校准；
 - Gallery 3 在正式 briefs 内的 `20×20 / 25×25` 具体比例仍须通过小屏和放弃率测试，但不得改变 6 幅/12 题配额；
 - 非英雄作品分别采用回声、2.5D、固定观察点或有限 3D 的成本上限；
-- 正式题无预填继续作为推荐待最终确认，教学、演示与无障碍可例外；
 - 玩家进度迁移政策仍待确认；当前候选为“进行中旧局重置并提示、已完成 legacy revision 保留并允许重玩”，但 revision/hash 不匹配时禁止静默复用旧状态；
 - 分页 PDF 可进入 V1 或 V1.1，但 Blueprint 事实源和 V1 必选输出不依赖 PDF；
 - [`BEAD_PATTERN_SPEC.md`](BEAD_PATTERN_SPEC.md) 负责冻结 `bead-pattern-v1` 字段级 schema 与 canonicalization 细节，本文件只消费该契约；

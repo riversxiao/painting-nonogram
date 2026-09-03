@@ -1,0 +1,8 @@
+{
+  "schema": "repair-fragment-v1",
+  "id": "dev-a3-f01",
+  "revision": 1,
+  "artworkID": "dev-artwork-cardinality-3",
+  "region": {"x": 0.10, "y": 0.10, "width": 0.18, "height": 0.18},
+  "puzzleDefinitionID": "dev-a3-f01-p01"
+}

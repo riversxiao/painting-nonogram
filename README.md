@@ -51,7 +51,7 @@ Museum 1 固定为：
 
 V1 采用彩色 Nonogram。每条 clue 为 `(count, colorIndex)`；同色段之间至少间隔一个空格，异色段可以相邻。玩家格状态为 `unknown / excluded / filled(colorId)`。正式 PuzzleDefinition 必须具有唯一精确彩色解，并可纯逻辑完成。颜色不能成为唯一信息，线索、格状态、选择与反馈都必须提供非颜色编码。
 
-正式内容推荐不使用预填格，但这一点**待用户最终确认**。`5×5` 教学、演示和无障碍模式可以使用预填格；任何使用预填格的完成均不计为 `completedWithoutHints`。
+正式内容不使用预填格；题目必须仅凭 clues 和标准彩色 Nonogram 规则具有唯一解并可纯逻辑完成。`5×5` 教学、演示和无障碍辅助可以使用预填格；预填属于具体游玩 Session 的辅助层，任何使用预填格的完成均不计为 `completedWithoutHints`。
 
 ## Blueprint V1
 
@@ -93,6 +93,7 @@ Museum 1 英雄画作《潮汐城的归桥》固定为 `3` 个 Repair Fragments�
 - [Canon 详设：画境、画桥与文明消除](docs/NARRATIVE_EXPANSION.md)
 - [技术决策：Swift 原生与离线画境生产](docs/TECH_EXPLORATION.md)
 - [开发与 App Store 发布规划](docs/DEVELOPMENT_PLAN.md)
+- [彩色谜题 schema、语义哈希与 solver 规范](docs/PUZZLE_DEFINITION_SPEC.md)
 - [拼豆图案事实源规范](docs/BEAD_PATTERN_SPEC.md)
 - [Museum 1 作品生产 Brief](docs/MUSEUM_1_ARTWORK_BRIEFS.md)
 
@@ -106,3 +107,21 @@ Museum 1 英雄画作《潮汐城的归桥》固定为 `3` 个 Repair Fragments�
 → Blueprint V1 导出、权限与印章正确派生 → entitlement 不触发 Story milestone
 → 技术知识链与七个独立 Story milestones 顺序验证 → 有限确定性画境验证
 ```
+
+## 当前可运行开发基线
+
+M0/M1 首个规则核心与内容校验切片已建立；当前尚未包含 App/SwiftUI 工程。使用 Swift 6.x：
+
+```bash
+make build
+make validate-fixture
+make validate-session
+```
+
+`make validate-fixture` 会递归加载 `Content/Fixtures/`，校验 `Museum → Gallery → Artwork → 1–4 RepairFragments → PuzzleDefinition` 的 schema、ID、归属、引用与归一化区域，并逐题执行 clue、semantic hash、唯一精确彩色解和版本化纯逻辑验证；任一文件失败时返回非零。当前 fixture 覆盖全部 `1 / 2 / 3 / 4` Fragment cardinality。需要查看逐题 deduction steps 时，可运行：
+
+```bash
+swift run --package-path Tools/kanaka-content kanaka-content validate-puzzles Content/Fixtures
+```
+
+`make validate-session` 使用代表性 `5×5` 题运行纯核心会话闭环：一次批量完成、Undo/Redo、`UInt8` snapshot round trip、恢复时清空内存 history，以及 assistance 不可通过 Undo 恢复无提示资格。
