@@ -30,6 +30,10 @@ enum KanakaContentCommand {
                 try await validateProgress(
                     puzzleURL: URL(fileURLWithPath: arguments[1])
                 )
+            case "validate-access":
+                try validateAccess(
+                    artworkURL: URL(fileURLWithPath: arguments[1])
+                )
             default:
                 throw CommandError.usage
             }
@@ -238,8 +242,7 @@ enum KanakaContentCommand {
         )
         guard firstReceipt.newlyCompleted,
               firstReceipt.completedCount == 1,
-              firstReceipt.totalCount == 2,
-              !firstReceipt.artworkRestored else {
+              firstReceipt.totalCount == 2 else {
             throw CommandError.progressValidationFailed("first completion receipt is incorrect")
         }
 
@@ -258,8 +261,7 @@ enum KanakaContentCommand {
         )
         guard finalReceipt.newlyCompleted,
               finalReceipt.completedCount == 2,
-              finalReceipt.totalCount == 2,
-              finalReceipt.artworkRestored else {
+              finalReceipt.totalCount == 2 else {
             throw CommandError.progressValidationFailed("final completion receipt is incorrect")
         }
 
@@ -369,14 +371,190 @@ enum KanakaContentCommand {
             "  coalesced autosave + explicit flush: passed",
             "  assistance-only durability: passed",
             "  restore generation: \(resumedGeneration)",
-            "  first completion: 1/2, artwork restored: no",
-            "  final completion: 2/2, artwork restored: yes",
+            "  first completion count: 1/2",
+            "  final completion count: 2/2",
             "  stale generation rejection: passed",
             "  reentrant completion submission: preserved",
             "  failed flush retry state: preserved",
             "  exact-current restore isolation: passed",
             "  SwiftData adapter: conditionally compiled on Apple platforms",
         ].joined(separator: "\n"))
+    }
+
+    private static func validateAccess(artworkURL: URL) throws {
+        let artwork = try JSONDecoder().decode(
+            ArtworkDefinition.self,
+            from: Data(contentsOf: artworkURL)
+        )
+        guard artwork.repairFragmentIDs.count == 4 else {
+            throw CommandError.accessValidationFailed(
+                "expected the cardinality-4 Artwork fixture"
+            )
+        }
+
+        func replacingFragments(with fragmentIDs: [String]) -> ArtworkDefinition {
+            ArtworkDefinition(
+                schema: artwork.schema,
+                id: artwork.id,
+                revision: artwork.revision,
+                museumID: artwork.museumID,
+                galleryID: artwork.galleryID,
+                repairFragmentIDs: fragmentIDs,
+                blueprintID: artwork.blueprintID
+            )
+        }
+
+        func matches(
+            _ state: ArtworkAccessState,
+            restored: Bool,
+            blueprint: Bool,
+            seal: Bool
+        ) -> Bool {
+            state.artworkRestored == restored
+                && state.canUseArtworkBlueprint == blueprint
+                && state.hasRestorerSeal == seal
+        }
+
+        let noEntitlement = ArtworkAccessEvaluator(
+            entitlementResolver: AccessSmokeEntitlementResolver(museumIDs: [])
+        )
+        let noProgress = try noEntitlement.evaluate(
+            artwork: artwork,
+            completedFragmentIDs: []
+        )
+        guard matches(
+            noProgress,
+            restored: false,
+            blueprint: false,
+            seal: false
+        ) else {
+            throw CommandError.accessValidationFailed(
+                "an untouched Artwork unexpectedly has access or completion"
+            )
+        }
+
+        for omittedFragmentID in artwork.repairFragmentIDs {
+            let completedIDs = Set(
+                artwork.repairFragmentIDs.filter { $0 != omittedFragmentID }
+            )
+            let partial = try noEntitlement.evaluate(
+                artwork: artwork,
+                completedFragmentIDs: completedIDs
+            )
+            guard partial == noProgress else {
+                throw CommandError.accessValidationFailed(
+                    "Artwork restored before all configured Fragments completed"
+                )
+            }
+        }
+
+        let partialIDs = Set(artwork.repairFragmentIDs.dropLast())
+        let matchingEntitlement = ArtworkAccessEvaluator(
+            entitlementResolver: AccessSmokeEntitlementResolver(
+                museumIDs: [artwork.museumID]
+            )
+        )
+        let entitled = try matchingEntitlement.evaluate(
+            artwork: artwork,
+            completedFragmentIDs: partialIDs
+        )
+        guard matches(
+            entitled,
+            restored: false,
+            blueprint: true,
+            seal: false
+        ) else {
+            throw CommandError.accessValidationFailed(
+                "Museum entitlement changed restoration or seal state"
+            )
+        }
+
+        let otherEntitlement = ArtworkAccessEvaluator(
+            entitlementResolver: AccessSmokeEntitlementResolver(
+                museumIDs: ["another-museum"]
+            )
+        )
+        guard try otherEntitlement.evaluate(
+            artwork: artwork,
+            completedFragmentIDs: partialIDs
+        ) == noProgress else {
+            throw CommandError.accessValidationFailed(
+                "an unrelated Museum entitlement granted Blueprint access"
+            )
+        }
+
+        var completedIDs = Set(artwork.repairFragmentIDs)
+        completedIDs.insert("unrelated-fragment")
+        let restored = try noEntitlement.evaluate(
+            artwork: artwork,
+            completedFragmentIDs: completedIDs
+        )
+        guard matches(
+            restored,
+            restored: true,
+            blueprint: true,
+            seal: true
+        ) else {
+            throw CommandError.accessValidationFailed(
+                "complete Artwork did not derive Blueprint access and seal"
+            )
+        }
+
+        let singleFragmentArtwork = replacingFragments(with: [artwork.repairFragmentIDs[0]])
+        let completedSingleFragment = try noEntitlement.evaluate(
+            artwork: singleFragmentArtwork,
+            completedFragmentIDs: [artwork.repairFragmentIDs[0]]
+        )
+        guard try noEntitlement.evaluate(
+            artwork: singleFragmentArtwork,
+            completedFragmentIDs: []
+        ) == noProgress,
+        matches(
+            completedSingleFragment,
+            restored: true,
+            blueprint: true,
+            seal: true
+        ) else {
+            throw CommandError.accessValidationFailed(
+                "single-Fragment Artwork completion is incorrect"
+            )
+        }
+
+        for invalidCount in [0, 5] {
+            let invalidArtwork = replacingFragments(
+                with: (0..<invalidCount).map { "invalid-fragment-\($0)" }
+            )
+            do {
+                _ = try noEntitlement.evaluate(
+                    artwork: invalidArtwork,
+                    completedFragmentIDs: []
+                )
+                throw CommandError.accessValidationFailed(
+                    "accepted Artwork Fragment count \(invalidCount)"
+                )
+            } catch ArtworkRuleError.invalidRepairFragmentCount(let actual)
+                where actual == invalidCount {
+                // Expected: count is validated before allSatisfy.
+            }
+        }
+
+        print([
+            "✓ Artwork access smoke validation",
+            "  Fragment cardinality guard: 0/5 rejected, 1/4 accepted",
+            "  partial completion: no restoration, Blueprint, or seal",
+            "  matching Museum entitlement: Blueprint only",
+            "  unrelated Museum entitlement: no access",
+            "  complete Artwork: restoration + Blueprint + seal",
+            "  extra completed Fragment IDs: ignored",
+        ].joined(separator: "\n"))
+    }
+}
+
+private struct AccessSmokeEntitlementResolver: MuseumBlueprintEntitlementResolving {
+    let museumIDs: Set<String>
+
+    func hasMuseumBlueprintEntitlement(_ museumID: String) -> Bool {
+        museumIDs.contains(museumID)
     }
 }
 
@@ -452,11 +630,12 @@ enum CommandError: Error, CustomStringConvertible {
     case noPuzzleDefinitions(String)
     case sessionValidationFailed(String)
     case progressValidationFailed(String)
+    case accessValidationFailed(String)
 
     var description: String {
         switch self {
         case .usage:
-            return "Usage:\n  kanaka-content validate-puzzle <puzzle-definition.json>\n  kanaka-content validate-puzzles <directory>\n  kanaka-content validate-content <directory>\n  kanaka-content validate-session <puzzle-definition.json>\n  kanaka-content validate-progress <puzzle-definition.json>"
+            return "Usage:\n  kanaka-content validate-puzzle <puzzle-definition.json>\n  kanaka-content validate-puzzles <directory>\n  kanaka-content validate-content <directory>\n  kanaka-content validate-session <puzzle-definition.json>\n  kanaka-content validate-progress <puzzle-definition.json>\n  kanaka-content validate-access <artwork.json>"
         case .invalidDirectory(let path):
             return "Not a readable directory: \(path)"
         case .noPuzzleDefinitions(let path):
@@ -465,6 +644,8 @@ enum CommandError: Error, CustomStringConvertible {
             return "GameSession validation failed: \(reason)"
         case .progressValidationFailed(let reason):
             return "Progress validation failed: \(reason)"
+        case .accessValidationFailed(let reason):
+            return "Artwork access validation failed: \(reason)"
         }
     }
 }
