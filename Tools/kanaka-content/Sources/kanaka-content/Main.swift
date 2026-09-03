@@ -1,10 +1,11 @@
 import Foundation
 import KanakaContentKit
 import KanakaCore
+import KanakaProgress
 
 @main
 enum KanakaContentCommand {
-    static func main() {
+    static func main() async {
         do {
             let arguments = Array(CommandLine.arguments.dropFirst())
             guard arguments.count == 2 else { throw CommandError.usage }
@@ -23,6 +24,10 @@ enum KanakaContentCommand {
                 print(report.formattedDescription)
             case "validate-session":
                 try validateSession(
+                    puzzleURL: URL(fileURLWithPath: arguments[1])
+                )
+            case "validate-progress":
+                try await validateProgress(
                     puzzleURL: URL(fileURLWithPath: arguments[1])
                 )
             default:
@@ -151,6 +156,294 @@ enum KanakaContentCommand {
             "  assistance monotonicity: passed",
         ].joined(separator: "\n"))
     }
+
+    private static func validateProgress(puzzleURL: URL) async throws {
+        let puzzle = try JSONDecoder().decode(
+            PuzzleDefinition.self,
+            from: Data(contentsOf: puzzleURL)
+        )
+        _ = try PuzzleContentValidator.validate(puzzle)
+
+        let store = InMemoryProgressStore()
+        let firstFragmentID = "smoke-fragment-1"
+        let secondFragmentID = "smoke-fragment-2"
+        let firstKey = ProgressRecordKey(fragmentID: firstFragmentID, puzzle: puzzle)
+        let secondKey = ProgressRecordKey(fragmentID: secondFragmentID, puzzle: puzzle)
+        let requiredKeys = [firstKey, secondKey]
+
+        let opened = try await ProgressSessionLoader.open(
+            fragmentID: firstFragmentID,
+            puzzle: puzzle,
+            store: store
+        )
+        guard case .new(var firstSession, let initialGeneration) = opened,
+              initialGeneration == 0 else {
+            throw CommandError.progressValidationFailed("new Fragment did not open cleanly")
+        }
+
+        let firstCoordinator = try SessionAutosaveCoordinator(
+            fragmentID: firstFragmentID,
+            persistedGeneration: initialGeneration,
+            store: store,
+            throttleDelay: .seconds(60)
+        )
+
+        // Assistance-only state and a later cell edit are coalesced; explicit flush wins over the timer.
+        _ = firstSession.recordAssistance(.hint)
+        _ = try await firstCoordinator.submit(snapshot: firstSession.makeSnapshot())
+        guard let firstColoredOffset = puzzle.solution.cells.firstIndex(where: { $0 != nil }),
+              let firstColorID = puzzle.solution.cells[firstColoredOffset] else {
+            throw CommandError.progressValidationFailed("fixture has no colored answer cell")
+        }
+        _ = try firstSession.applyBatch([
+            CellEdit(
+                coordinate: CellCoordinate(
+                    x: firstColoredOffset % puzzle.solution.width,
+                    y: firstColoredOffset / puzzle.solution.width
+                ),
+                state: .filled(colorId: firstColorID)
+            ),
+        ])
+        _ = try await firstCoordinator.submit(snapshot: firstSession.makeSnapshot())
+        try await firstCoordinator.flush()
+
+        let resumed = try await ProgressSessionLoader.open(
+            fragmentID: firstFragmentID,
+            puzzle: puzzle,
+            store: store
+        )
+        guard case .restored(var resumedSession, let resumedGeneration) = resumed,
+              resumedGeneration == 2,
+              resumedSession.assistanceHistory.contains(.hint) else {
+            throw CommandError.progressValidationFailed(
+                "flush did not preserve the latest cells and assistance"
+            )
+        }
+
+        let solutionEdits = puzzle.solution.cells.enumerated().compactMap { offset, colorID -> CellEdit? in
+            guard let colorID else { return nil }
+            return CellEdit(
+                coordinate: CellCoordinate(
+                    x: offset % puzzle.solution.width,
+                    y: offset / puzzle.solution.width
+                ),
+                state: .filled(colorId: colorID)
+            )
+        }
+        _ = try resumedSession.applyBatch(solutionEdits)
+        let firstReceipt = try await firstCoordinator.complete(
+            artworkID: "smoke-artwork",
+            requiredFragmentKeys: requiredKeys,
+            session: resumedSession
+        )
+        guard firstReceipt.newlyCompleted,
+              firstReceipt.completedCount == 1,
+              firstReceipt.totalCount == 2,
+              !firstReceipt.artworkRestored else {
+            throw CommandError.progressValidationFailed("first completion receipt is incorrect")
+        }
+
+        var secondSession = try GameSession(puzzle: puzzle)
+        _ = try secondSession.applyBatch(solutionEdits)
+        let secondCoordinator = try SessionAutosaveCoordinator(
+            fragmentID: secondFragmentID,
+            persistedGeneration: 0,
+            store: store,
+            throttleDelay: .seconds(60)
+        )
+        let finalReceipt = try await secondCoordinator.complete(
+            artworkID: "smoke-artwork",
+            requiredFragmentKeys: requiredKeys,
+            session: secondSession
+        )
+        guard finalReceipt.newlyCompleted,
+              finalReceipt.completedCount == 2,
+              finalReceipt.totalCount == 2,
+              finalReceipt.artworkRestored else {
+            throw CommandError.progressValidationFailed("final completion receipt is incorrect")
+        }
+
+        do {
+            try await store.saveSession(
+                fragmentID: firstFragmentID,
+                snapshot: try resumedSession.makeSnapshot(),
+                generation: 1,
+                updatedAt: Date()
+            )
+            throw CommandError.progressValidationFailed("stale generation was accepted")
+        } catch ProgressStoreError.staleGeneration {
+            // Expected: a delayed autosave cannot overwrite the completion generation.
+        }
+
+        // A submit that reenters while completion awaits the Store must remain pending.
+        let reentrantStore = ProgressSmokeStore(completionDelay: .milliseconds(50))
+        let reentrantFragmentID = "smoke-fragment-reentrant"
+        let reentrantKey = ProgressRecordKey(fragmentID: reentrantFragmentID, puzzle: puzzle)
+        var preparedReentrantSession = try GameSession(puzzle: puzzle)
+        _ = try preparedReentrantSession.applyBatch(solutionEdits)
+        let reentrantSession = preparedReentrantSession
+        let reentrantSnapshot = try reentrantSession.makeSnapshot()
+        let reentrantCoordinator = try SessionAutosaveCoordinator(
+            fragmentID: reentrantFragmentID,
+            persistedGeneration: 0,
+            store: reentrantStore,
+            throttleDelay: .seconds(60)
+        )
+        let completionTask = Task {
+            try await reentrantCoordinator.complete(
+                artworkID: "smoke-reentrant-artwork",
+                requiredFragmentKeys: [reentrantKey],
+                session: reentrantSession
+            )
+        }
+        while !(await reentrantStore.completionHasStarted()) { await Task.yield() }
+        _ = try await reentrantCoordinator.submit(snapshot: reentrantSnapshot)
+        _ = try await completionTask.value
+        guard await reentrantCoordinator.hasPendingSave,
+              await reentrantCoordinator.currentGeneration == 2 else {
+            throw CommandError.progressValidationFailed(
+                "completion erased a newer reentrant submission"
+            )
+        }
+        try await reentrantCoordinator.flush()
+        guard let reentrantRecord = try await reentrantStore.record(for: reentrantKey),
+              reentrantRecord.generation == 2,
+              reentrantRecord.completedAt != nil else {
+            throw CommandError.progressValidationFailed(
+                "reentrant submission did not preserve completion"
+            )
+        }
+
+        // A failed durability barrier must leave enough state for an explicit retry.
+        let retryStore = ProgressSmokeStore(failNextFlush: true)
+        let retryFragmentID = "smoke-fragment-retry"
+        let retryKey = ProgressRecordKey(fragmentID: retryFragmentID, puzzle: puzzle)
+        let retryCoordinator = try SessionAutosaveCoordinator(
+            fragmentID: retryFragmentID,
+            persistedGeneration: 0,
+            store: retryStore,
+            throttleDelay: .seconds(60)
+        )
+        _ = try await retryCoordinator.submit(snapshot: reentrantSnapshot)
+        do {
+            try await retryCoordinator.flush()
+            throw CommandError.progressValidationFailed("injected flush failure was not surfaced")
+        } catch ProgressSmokeStoreError.injectedFlushFailure {
+            guard await retryCoordinator.hasPendingSave else {
+                throw CommandError.progressValidationFailed(
+                    "flush failure discarded retry state"
+                )
+            }
+        }
+        try await retryCoordinator.flush()
+        guard !(await retryCoordinator.hasPendingSave),
+              try await retryStore.record(for: retryKey)?.generation == 1 else {
+            throw CommandError.progressValidationFailed("flush retry did not become durable")
+        }
+
+        // Exact-current lookup must not decode corrupt sibling revisions first.
+        let isolatedStore = ProgressSmokeStore(rejectCollectionReads: true)
+        let isolatedFragmentID = "smoke-fragment-isolated"
+        let isolatedKey = ProgressRecordKey(fragmentID: isolatedFragmentID, puzzle: puzzle)
+        try await isolatedStore.saveSession(
+            fragmentID: isolatedFragmentID,
+            snapshot: reentrantSnapshot,
+            generation: 7,
+            updatedAt: Date()
+        )
+        let isolatedOpen = try await ProgressSessionLoader.open(
+            fragmentID: isolatedFragmentID,
+            puzzle: puzzle,
+            store: isolatedStore
+        )
+        guard case .restored(_, let isolatedGeneration) = isolatedOpen,
+              isolatedGeneration == 7,
+              try await isolatedStore.record(for: isolatedKey) != nil else {
+            throw CommandError.progressValidationFailed(
+                "exact-current restore depended on sibling record decoding"
+            )
+        }
+
+        print([
+            "✓ Progress persistence smoke validation",
+            "  coalesced autosave + explicit flush: passed",
+            "  assistance-only durability: passed",
+            "  restore generation: \(resumedGeneration)",
+            "  first completion: 1/2, artwork restored: no",
+            "  final completion: 2/2, artwork restored: yes",
+            "  stale generation rejection: passed",
+            "  reentrant completion submission: preserved",
+            "  failed flush retry state: preserved",
+            "  exact-current restore isolation: passed",
+            "  SwiftData adapter: conditionally compiled on Apple platforms",
+        ].joined(separator: "\n"))
+    }
+}
+
+private enum ProgressSmokeStoreError: Error {
+    case injectedFlushFailure
+}
+
+/// Fault-injecting adapter used only by the CLI persistence smoke validation.
+private actor ProgressSmokeStore: ProgressStore {
+    private let base = InMemoryProgressStore()
+    private let completionDelay: Duration?
+    private let rejectCollectionReads: Bool
+    private var shouldFailNextFlush: Bool
+    private var didStartCompletion = false
+
+    init(
+        completionDelay: Duration? = nil,
+        failNextFlush: Bool = false,
+        rejectCollectionReads: Bool = false
+    ) {
+        self.completionDelay = completionDelay
+        self.shouldFailNextFlush = failNextFlush
+        self.rejectCollectionReads = rejectCollectionReads
+    }
+
+    func completionHasStarted() -> Bool { didStartCompletion }
+
+    func records(for fragmentID: String) async throws -> [FragmentProgressRecord] {
+        if rejectCollectionReads {
+            throw ProgressStoreError.persistentRecordCorrupt("injected corrupt sibling")
+        }
+        return try await base.records(for: fragmentID)
+    }
+
+    func record(for key: ProgressRecordKey) async throws -> FragmentProgressRecord? {
+        try await base.record(for: key)
+    }
+
+    func saveSession(
+        fragmentID: String,
+        snapshot: SavedSessionSnapshot,
+        generation: UInt64,
+        updatedAt: Date
+    ) async throws {
+        try await base.saveSession(
+            fragmentID: fragmentID,
+            snapshot: snapshot,
+            generation: generation,
+            updatedAt: updatedAt
+        )
+    }
+
+    func completeFragment(
+        _ command: CompleteFragmentCommand
+    ) async throws -> FragmentCompletionReceipt {
+        didStartCompletion = true
+        if let completionDelay { try await Task.sleep(for: completionDelay) }
+        return try await base.completeFragment(command)
+    }
+
+    func flush() async throws {
+        if shouldFailNextFlush {
+            shouldFailNextFlush = false
+            throw ProgressSmokeStoreError.injectedFlushFailure
+        }
+        try await base.flush()
+    }
 }
 
 enum CommandError: Error, CustomStringConvertible {
@@ -158,17 +451,20 @@ enum CommandError: Error, CustomStringConvertible {
     case invalidDirectory(String)
     case noPuzzleDefinitions(String)
     case sessionValidationFailed(String)
+    case progressValidationFailed(String)
 
     var description: String {
         switch self {
         case .usage:
-            return "Usage:\n  kanaka-content validate-puzzle <puzzle-definition.json>\n  kanaka-content validate-puzzles <directory>\n  kanaka-content validate-content <directory>\n  kanaka-content validate-session <puzzle-definition.json>"
+            return "Usage:\n  kanaka-content validate-puzzle <puzzle-definition.json>\n  kanaka-content validate-puzzles <directory>\n  kanaka-content validate-content <directory>\n  kanaka-content validate-session <puzzle-definition.json>\n  kanaka-content validate-progress <puzzle-definition.json>"
         case .invalidDirectory(let path):
             return "Not a readable directory: \(path)"
         case .noPuzzleDefinitions(let path):
             return "No puzzle-definition.json files found under: \(path)"
         case .sessionValidationFailed(let reason):
             return "GameSession validation failed: \(reason)"
+        case .progressValidationFailed(let reason):
+            return "Progress validation failed: \(reason)"
         }
     }
 }

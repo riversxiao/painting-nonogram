@@ -99,7 +99,7 @@ Museum 1 英雄画作《潮汐城的归桥》固定为 `3` 个 Repair Fragments�
 
 ## 当前状态
 
-项目处于前期设计与技术规划阶段。首个工程目标是用 Museum 1 冻结规格中的代表性内容验证：
+项目已进入 M1/M2 技术基线阶段。当前用 Museum 1 冻结规格中的代表性内容验证：
 
 ```text
 内容导入 → schema、颜色与区域校验 → 唯一精确彩色解验证 → 纯逻辑验证
@@ -110,12 +110,13 @@ Museum 1 英雄画作《潮汐城的归桥》固定为 `3` 个 Repair Fragments�
 
 ## 当前可运行开发基线
 
-M0/M1 首个规则核心与内容校验切片已建立；当前尚未包含 App/SwiftUI 工程。使用 Swift 6.x：
+M0/M1 规则核心、内容校验和首个 M2 进度持久化切片已建立；当前尚未包含 App/SwiftUI 工程。使用 Swift 6.x：
 
 ```bash
 make build
 make validate-fixture
 make validate-session
+make validate-progress
 ```
 
 `make validate-fixture` 会递归加载 `Content/Fixtures/`，校验 `Museum → Gallery → Artwork → 1–4 RepairFragments → PuzzleDefinition` 的 schema、ID、归属、引用与归一化区域，并逐题执行 clue、semantic hash、唯一精确彩色解和版本化纯逻辑验证；任一文件失败时返回非零。当前 fixture 覆盖全部 `1 / 2 / 3 / 4` Fragment cardinality。需要查看逐题 deduction steps 时，可运行：
@@ -125,3 +126,5 @@ swift run --package-path Tools/kanaka-content kanaka-content validate-puzzles Co
 ```
 
 `make validate-session` 使用代表性 `5×5` 题运行纯核心会话闭环：一次批量完成、Undo/Redo、`UInt8` snapshot round trip、恢复时清空内存 history，以及 assistance 不可通过 Undo 恢复无提示资格。
+
+`make validate-progress` 验证 `KanakaProgress` 持久化契约：节流自动保存合并、显式 flush 与失败重试状态、assistance-only durability、会话恢复 generation、完成期间重入提交保留、两 Fragment Artwork 的 `1/2 → 2/2` 完成事务，以及旧 generation 写入拒绝。内存 Store 可在当前 Linux 基线运行；SwiftData Store 只在 `canImport(SwiftData)` 的 Apple 平台编译，仍需在后续 Xcode / iOS 17（或 macOS 14）环境完成 Apple 分支编译验证。
