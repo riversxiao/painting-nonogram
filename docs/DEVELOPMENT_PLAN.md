@@ -14,7 +14,8 @@
 | 棋盘 | SwiftUI `Canvas` + Core Graphics；复杂手势必要时桥接 UIKit |
 | 游戏核心 | 独立 Swift Package：`KanakaCore` |
 | 内容协议 | 独立 Swift Package：`KanakaContentKit` |
-| 本地存储 | SwiftData；玩家格状态按每格 `UInt8` 压缩为 `Data` |
+| 进度协议 | 独立 Swift Package：`KanakaProgress`；内存 Store + Apple 平台 SwiftData adapter |
+| 本地存储 | SwiftData；玩家格状态按每格 `UInt8` 压缩为单个 `Data` blob |
 | 权益 | StoreKit 2 + 可测试的 entitlement resolver |
 | 音视频 | AVFoundation / AVKit |
 | 动画 | SwiftUI / Core Animation；SpriteKit 仅按需 |
@@ -51,6 +52,7 @@ painting-nonogram/
 ├── Packages/
 │   ├── KanakaCore/
 │   ├── KanakaContentKit/
+│   ├── KanakaProgress/
 │   └── KanakaDesignSystem/
 ├── Tools/
 │   └── kanaka-content/
@@ -388,7 +390,9 @@ validate-source
 
 - `cell-state-codec-v1` 每格使用一个 `UInt8`：`0 = unknown`、`1 = excluded`、`2...255 = filled(colorIndex = byte - 1)`；palette 最多 `254` 色，并必须解析回稳定 `colorId`。
 - 旧的两位元状态格式不能表达 V1 多色玩家状态；cell count、palette 连续索引、未知 colorId 与越界 byte 必须严格拒绝，不能静默降级为 unknown。
-- 自动保存采用短节流，进入后台立即 flush。
+- `KanakaProgress` 以 `ProgressRecordKey(fragmentID + puzzleID + revision + semanticHash)` 标识记录；不同 revision/hash 并存，不覆盖或删除旧记录。
+- 自动保存采用可注入的短节流（默认 `300 ms`），只提交最新 snapshot；进入后台由上层显式 `await flush()`。
+- 每次提交携带单调 generation；Store 幂等接受同 generation，拒绝旧 generation，避免延迟自动保存覆盖更新状态或完成状态。
 - 记录 PuzzleDefinition ID、revision、puzzle semantic hash 与 palette 语义映射。
 - 恢复时必须先验证 codec version、PuzzleDefinition ID、revision、semantic hash、尺寸/cell count 和 palette 语义映射；不匹配时禁止解码或载入旧格子状态，并进入明确的迁移决策路径。
 - semantic hash 相同但 revision 不同也先返回独立 migration decision，不静默恢复；玩家记录政策确认前，不自动重置或改写旧记录。
@@ -397,13 +401,15 @@ validate-source
 
 ### 9.3 Fragment 完成事务
 
-1. 原子写入对应 `RepairFragmentProgress.completedAt`。
-2. 重新读取 Artwork 的全部 `repairFragmentIDs`。
-3. 计算并显示 `x/n`。
+1. 通过一个 Store 操作原子写入对应 Fragment 的最终 snapshot 与 `completedAt`；SwiftData adapter 在同一个 `ModelContext.save()` 中提交两者。
+2. 以 Artwork 的全部 `repairFragmentIDs` 和当前精确 `ProgressRecordKey` 重新计算完成集合；同一 Fragment 的其他 revision/hash 不计入当前 `x/n`。
+3. 返回并显示严格当前 identity 的 `x/n` completion receipt。
 4. 只更新对应区域的修复视觉。
 5. 若 `x == n`，立即触发整幅展示、Blueprint earned access 与 seal UI。
 6. Fragment/Artwork 完成只向独立叙事聚合器提交带证据 ID 的 Canon 事件；聚合器校验内容顺序与 milestone 前置后，才幂等推进 `StoryState`。
 7. entitlement resolver、购买/恢复权益、Blueprint 访问、展示顺序和跳转 UI 均不得提交 Canon 事件，也不得直接或间接触发 `technicalChainRestored`、`bridgeLocated`、`bridgeBrieflyStarted`、`bridgeRebooted`、`firstPostCollapseFullEntryCompleted`、`firstGenerationPurgeRevealed` 或 `newOperatorDetected`。
+
+当前 completion receipt 刻意只认可当前精确 identity。旧 revision 是否继续认可 Artwork 完成仍属于待冻结的玩家迁移政策；在政策确认前，不自动删除、覆盖、重置或认可 legacy completion。
 
 ## 10. Blueprint V1 输出
 

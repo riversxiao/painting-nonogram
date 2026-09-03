@@ -10,11 +10,12 @@ let package = Package(
     dependencies: [
         .package(path: "../../Packages/KanakaCore"),
         .package(path: "../../Packages/KanakaContentKit"),
+        .package(path: "../../Packages/KanakaProgress"),
     ],
     targets: [
         .executableTarget(
             name: "kanaka-content",
-            dependencies: ["KanakaCore", "KanakaContentKit"]
+            dependencies: ["KanakaCore", "KanakaContentKit", "KanakaProgress"]
         ),
     ]
 )
