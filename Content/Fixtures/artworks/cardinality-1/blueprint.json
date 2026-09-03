@@ -1,0 +1,15 @@
+{
+  "schema": "blueprint-v1",
+  "blueprintId": "dev-blueprint-cardinality-1",
+  "revision": 1,
+  "artworkId": "dev-artwork-cardinality-1",
+  "sourceBeadAsset": {"assetId": "dev-bead-cardinality-1", "revision": 1, "contentHash": "sha256:c74b7e1919a53daa3c78a0eacc7fcd932892d432618e671b8efa8bfd699fc07c"},
+  "grid": {"origin": "top-left", "order": "row-major", "width": 2, "height": 2, "cells": [1, 0, 1, 0]},
+  "palette": [{"colorId": "archive-blue", "name": {"en": "Archive Blue", "zh-Hans": "档案蓝"}, "sRGB8": {"r": 44, "g": 76, "b": 112}, "brand": {"name": "Development Palette", "code": "DEV-112", "swatchVersion": "v1"}, "accessibilitySymbol": "A"}],
+  "materialCounts": [{"colorId": "archive-blue", "count": 2}],
+  "totalBeads": 2,
+  "physical": {"beadPitchMm": 5, "boardLayout": {"columns": 1, "rows": 1, "boardWidth": 2, "boardHeight": 2}},
+  "completedSize": {"widthMm": 10, "heightMm": 10},
+  "exportRules": {"version": "blueprint-export-v1", "pixelsPerCell": 8, "includeCoordinates": true, "includeLegend": true, "filenameVersion": "blueprint-filename-v1"},
+  "blueprintHash": "sha256:f1f51a6ea5c0172b53b6d828b31eb55f251ac2f95eb8aeb2b1184dca3d2ff5fb"
+}

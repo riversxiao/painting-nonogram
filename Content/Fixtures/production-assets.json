@@ -1,0 +1,15 @@
+{
+  "schema": "production-assets-v1",
+  "activeBeadAssets": [
+    {"assetId": "dev-bead-cardinality-1", "revision": 1, "contentHash": "sha256:c74b7e1919a53daa3c78a0eacc7fcd932892d432618e671b8efa8bfd699fc07c"},
+    {"assetId": "dev-bead-cardinality-2", "revision": 1, "contentHash": "sha256:eb93b045dc2a8e1568369a3953c0f7492bb019f9a778a3495cf5d1b123ce3499"},
+    {"assetId": "dev-bead-cardinality-3", "revision": 1, "contentHash": "sha256:94e88447e41cba9ae910d97f9e6c91098c174daf6bf7da5382769b26494fafbd"},
+    {"assetId": "dev-bead-cardinality-4", "revision": 1, "contentHash": "sha256:54beeab73dd1d5d4f2d1e8762f13065920c597879057cde2290e46a5f7a77a70"}
+  ],
+  "activeBlueprints": [
+    {"blueprintId": "dev-blueprint-cardinality-1", "revision": 1, "blueprintHash": "sha256:f1f51a6ea5c0172b53b6d828b31eb55f251ac2f95eb8aeb2b1184dca3d2ff5fb"},
+    {"blueprintId": "dev-blueprint-cardinality-2", "revision": 1, "blueprintHash": "sha256:32966d53b74541f1e846de3a1f58ca5e13bc4b371633508c02fa291ff7e939ad"},
+    {"blueprintId": "dev-blueprint-cardinality-3", "revision": 1, "blueprintHash": "sha256:1b3720b0a2f711841d7d33fe7a7ef18deb881becaaa2bf1c43f123ac22777bcb"},
+    {"blueprintId": "dev-blueprint-cardinality-4", "revision": 1, "blueprintHash": "sha256:fe2849e9ba2b5ef36262ea06a35392d7351f06e9827218a7938ef36706f7ee41"}
+  ]
+}

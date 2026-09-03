@@ -91,19 +91,28 @@ public struct FragmentCompletionReceipt: Equatable, Sendable {
     public let newlyCompleted: Bool
     public let completedCount: Int
     public let totalCount: Int
+    /// Completion timestamps for the exact-current Fragment identities, captured in the
+    /// same store operation as the final snapshot and completion timestamp.
+    public let completedAtByFragmentKey: [ProgressRecordKey: Date]
+
+    public var completedFragmentKeys: Set<ProgressRecordKey> {
+        Set(completedAtByFragmentKey.keys)
+    }
 
     public init(
         artworkID: String,
         fragmentKey: ProgressRecordKey,
         newlyCompleted: Bool,
         completedCount: Int,
-        totalCount: Int
+        totalCount: Int,
+        completedAtByFragmentKey: [ProgressRecordKey: Date]
     ) {
         self.artworkID = artworkID
         self.fragmentKey = fragmentKey
         self.newlyCompleted = newlyCompleted
         self.completedCount = completedCount
         self.totalCount = totalCount
+        self.completedAtByFragmentKey = completedAtByFragmentKey
     }
 }
 
