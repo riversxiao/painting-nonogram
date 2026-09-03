@@ -131,7 +131,12 @@ public actor SwiftDataProgressStore: ProgressStore {
     private let context: ModelContext
 
     public init(inMemoryOnly: Bool = false) throws {
-        let configuration = ModelConfiguration(isStoredInMemoryOnly: inMemoryOnly)
+        // A stable, domain-specific configuration name keeps this store separate from the
+        // independently owned Story container when both use SwiftData's default location.
+        let configuration = ModelConfiguration(
+            "KanakaProgress",
+            isStoredInMemoryOnly: inMemoryOnly
+        )
         let container = try ModelContainer(
             for: SwiftDataFragmentProgressEntity.self,
             configurations: configuration
@@ -199,6 +204,9 @@ public actor SwiftDataProgressStore: ProgressStore {
                 }
                 return
             }
+            if current.completedAt != nil, snapshot != current.snapshot {
+                throw ProgressStoreError.completedSnapshotImmutable(key)
+            }
             try existing.replace(
                 snapshot: snapshot,
                 generation: generation,
@@ -222,6 +230,11 @@ public actor SwiftDataProgressStore: ProgressStore {
         var entities = try allEntities()
         let existing = entities.first(where: { $0.key == key })
         let current = try existing?.domainRecord()
+
+        if let current, current.completedAt != nil,
+           command.finalSnapshot != current.snapshot {
+            throw ProgressStoreError.completedSnapshotImmutable(key)
+        }
 
         if let current {
             if command.generation < current.generation {

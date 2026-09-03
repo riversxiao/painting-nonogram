@@ -9,12 +9,23 @@ let package = Package(
         .executable(name: "KanakaApp", targets: ["KanakaApp"]),
     ],
     dependencies: [
+        .package(path: "../../Packages/KanakaCore"),
+        .package(path: "../../Packages/KanakaContentKit"),
+        .package(path: "../../Packages/KanakaProgress"),
+        .package(path: "../../Packages/KanakaStory"),
         .package(path: "../../Packages/KanakaProductDomain"),
     ],
     targets: [
         .executableTarget(
             name: "KanakaApp",
-            dependencies: ["KanakaProductDomain"]
+            dependencies: [
+                "KanakaCore",
+                "KanakaContentKit",
+                "KanakaProgress",
+                "KanakaStory",
+                "KanakaProductDomain",
+            ],
+            resources: [.copy("Resources/Content"), .copy("Resources/entitlements.json")]
         ),
     ]
 )

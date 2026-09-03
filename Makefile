@@ -1,4 +1,4 @@
-.PHONY: build validate-fixture validate-session validate-progress validate-access validate-product
+.PHONY: build validate-fixture validate-session validate-progress validate-access validate-product validate-app
 
 build:
 	swift build --package-path Packages/KanakaCore
@@ -23,3 +23,8 @@ validate-access:
 
 validate-product:
 	swift run --package-path Tools/kanaka-content kanaka-content validate-product-flow Content/Fixtures
+
+
+validate-app:
+	swift run --package-path Tools/kanaka-content kanaka-content validate-content Apps/KanakaApp/Sources/KanakaApp/Resources/Content
+	swift run --package-path Apps/KanakaApp KanakaApp

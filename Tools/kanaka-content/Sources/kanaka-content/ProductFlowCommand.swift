@@ -107,6 +107,9 @@ func validateProductFlow(directoryURL: URL) async throws {
     guard await resumedFirstController.currentSession().isComplete else {
         throw CommandError.productValidationFailed("autosaved product session did not restore")
     }
+    // Keep a second pre-completion controller alive to prove its higher generations cannot
+    // replace the durable completion snapshot after another controller finalizes the record.
+    let concurrentlyOpenedFirstController = try await flow.openFragment(firstFragmentID)
 
     // Complete the later Story evidence first. It remains durable but unapplied until the
     // earlier Fragment becomes available, proving catalog-wide deterministic convergence.
@@ -148,6 +151,52 @@ func validateProductFlow(directoryURL: URL) async throws {
         throw CommandError.productValidationFailed("final atomic product outcome or global Story convergence is incorrect")
     }
 
+    do {
+        _ = try await resumedFirstController.apply([
+            CellEdit(coordinate: CellCoordinate(x: 0, y: 0), state: .unknown),
+        ])
+        throw CommandError.productValidationFailed("completed controller accepted a mutation")
+    } catch ProductDomainError.sessionFinalized {
+        // Expected: completion records are immutable; replay must use a separate record.
+    }
+
+    _ = try await concurrentlyOpenedFirstController.apply([
+        CellEdit(coordinate: CellCoordinate(x: 0, y: 0), state: .unknown),
+    ])
+    _ = try await concurrentlyOpenedFirstController.recordAssistance(.hint)
+    do {
+        try await concurrentlyOpenedFirstController.flush()
+        throw CommandError.productValidationFailed(
+            "pre-completion controller replaced a completed snapshot"
+        )
+    } catch ProgressStoreError.completedSnapshotImmutable {
+        // Expected: higher generations may not change a completed snapshot.
+    }
+
+    let reopenedCompletedController = try await flow.openFragment(firstFragmentID)
+    guard await reopenedCompletedController.isFinalized(),
+          await reopenedCompletedController.currentSession().isComplete else {
+        throw CommandError.productValidationFailed("reopened completed controller was not read-only and complete")
+    }
+    do {
+        _ = try await reopenedCompletedController.undo()
+        throw CommandError.productValidationFailed("reopened completed controller accepted undo")
+    } catch ProductDomainError.sessionFinalized {
+        // Expected.
+    }
+    do {
+        _ = try await reopenedCompletedController.submit()
+        throw CommandError.productValidationFailed("reopened completed controller accepted submit")
+    } catch ProductDomainError.sessionFinalized {
+        // Expected.
+    }
+    do {
+        _ = try await flow.complete(reopenedCompletedController)
+        throw CommandError.productValidationFailed("reopened completed controller accepted completion")
+    } catch ProductDomainError.sessionFinalized {
+        // Expected.
+    }
+
     let earnedBlueprint = try await flow.blueprints.openBlueprint(
         artworkID: artworkID,
         entitlements: noEntitlement
@@ -175,10 +224,11 @@ func validateProductFlow(directoryURL: URL) async throws {
         "  validated catalog: 1 Museum / 4 Artworks / 10 Fragments / 4 Blueprints",
         "  content-driven session: mutation autosave → flush → reopen → exact completion",
         "  atomic Artwork completion: receipt and state 0/2 → 1/2 → 2/2",
+        "  completed sessions: immutable across live, pre-completion, and reopened controllers",
         "  entitlement-only Blueprint access: isolated from progress, seal, and Story",
         "  earned Blueprint: authorized with deterministic 16×16 PNG plan",
         "  production content: RFC 8785 vectors + manifest-selected revision/rollback",
-        "  malformed production facts: hash/RGB/board/material rejection",
+        "  malformed production facts: hash/RGB/board/material/symbol/export rejection",
         "  Story reconciliation: global, deterministic, stable, and idempotent",
         "  Story persistence: concurrent apply is atomic; mappings are capability-checked",
         "  Museum 1 Canon: 28 ordered evidence events → 7 milestones",
@@ -350,6 +400,32 @@ private func validateProductionContentDefenses(directoryURL: URL) throws {
     )
     try expectInvalidProductionField("out-of-range RGB") {
         try ProductionContentValidator.validate(beadPattern: invalidRGBPattern)
+    }
+
+    var invalidSymbol = try jsonObject(beadData)
+    var symbolPalette = invalidSymbol["palette"] as! [[String: Any]]
+    var symbolEntry = symbolPalette[0]
+    symbolEntry["accessibilitySymbol"] = "AB"
+    symbolPalette[0] = symbolEntry
+    invalidSymbol["palette"] = symbolPalette
+    let invalidSymbolPattern = try JSONDecoder().decode(
+        BeadPatternDefinition.self,
+        from: JSONSerialization.data(withJSONObject: invalidSymbol)
+    )
+    try expectInvalidProductionField("multi-grapheme accessibility symbol") {
+        try ProductionContentValidator.validate(beadPattern: invalidSymbolPattern)
+    }
+
+    var lowResolutionExport = try jsonObject(blueprintData)
+    var exportRules = lowResolutionExport["exportRules"] as! [String: Any]
+    exportRules["pixelsPerCell"] = 7
+    lowResolutionExport["exportRules"] = exportRules
+    let lowResolutionBlueprint = try JSONDecoder().decode(
+        BlueprintDefinition.self,
+        from: JSONSerialization.data(withJSONObject: lowResolutionExport)
+    )
+    try expectInvalidProductionField("illegible Blueprint symbol resolution") {
+        try ProductionContentValidator.validate(blueprint: lowResolutionBlueprint, source: source)
     }
 
     var invalidBoard = try jsonObject(beadData)

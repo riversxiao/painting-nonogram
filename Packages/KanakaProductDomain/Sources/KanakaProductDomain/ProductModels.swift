@@ -48,6 +48,7 @@ public enum ProductDomainError: Error, Equatable, CustomStringConvertible {
     case sessionBelongsToAnotherFlow
     case inconsistentCompletionReceipt
     case invalidStoryMapping(String)
+    case sessionFinalized
 
     public var description: String {
         switch self {
@@ -57,6 +58,7 @@ public enum ProductDomainError: Error, Equatable, CustomStringConvertible {
         case .sessionBelongsToAnotherFlow: "Puzzle session does not belong to this product flow"
         case .inconsistentCompletionReceipt: "Completion receipt does not match current Artwork content"
         case .invalidStoryMapping(let reason): "Invalid completion-to-Story mapping: \(reason)"
+        case .sessionFinalized: "Completed puzzle session is read-only"
         }
     }
 }

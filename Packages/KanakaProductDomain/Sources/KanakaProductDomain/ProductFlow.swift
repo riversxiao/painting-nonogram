@@ -56,6 +56,9 @@ public struct ProductFlow: Sendable {
         case .corrupt(_, let reason):
             throw ProductDomainError.corruptProgress(String(describing: reason))
         }
+        let finalized = try await progressStore.record(
+            for: ProgressRecordKey(fragmentID: fragmentID, puzzle: context.puzzle)
+        )?.completedAt != nil
         return try PuzzleSessionController(
             flowID: id,
             fragmentID: fragmentID,
@@ -64,6 +67,7 @@ public struct ProductFlow: Sendable {
             requiredFragmentKeys: keys,
             session: session,
             generation: generation,
+            finalized: finalized,
             progressStore: progressStore,
             throttleDelay: throttleDelay
         )

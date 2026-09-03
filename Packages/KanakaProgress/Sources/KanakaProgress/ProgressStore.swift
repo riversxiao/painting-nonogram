@@ -42,6 +42,7 @@ public enum ProgressStoreError: Error, Equatable, CustomStringConvertible {
     case snapshotIdentityMismatch(expected: ProgressRecordKey, actual: ProgressRecordKey)
     case incompleteSession
     case generationExhausted
+    case completedSnapshotImmutable(ProgressRecordKey)
     case persistentRecordCorrupt(String)
     case unsupportedPlatform(String)
 
@@ -63,6 +64,8 @@ public enum ProgressStoreError: Error, Equatable, CustomStringConvertible {
             return "A Fragment cannot be completed from an incomplete GameSession"
         case .generationExhausted:
             return "Progress generation counter is exhausted"
+        case .completedSnapshotImmutable(let key):
+            return "Completed progress snapshot is immutable: \(key.fragmentID)"
         case .persistentRecordCorrupt(let reason):
             return "Persistent progress record is corrupt: \(reason)"
         case .unsupportedPlatform(let feature):

@@ -417,7 +417,7 @@ validate-source
 
 `KanakaProductDomain` 采用确定性 reconciliation 连接 durable completion 与 `KanakaStory`：一次 exact-current batch progress snapshot 为全 catalog 构造候选，再按 Story rule 顺序推进可用前缀；先完成的后序内容会保留在 durable progress 中，并在前序证据出现后自动收敛。Fragment 与 Artwork occurrence 使用包含 `fragmentID / puzzleID / revision / semanticHash` 的版本化长度前缀 canonical bytes 计算 SHA-256；Artwork 时间取所有构成 Fragment 的 durable `completedAt` 最大值，因此重放 byte-for-byte 稳定。completion mapping 在 ProductFlow 初始化时校验 catalog 实体、规则 source kind 与 evidence 唯一性，narrative/bridge API 不能构造 completion source。
 
-`StoryStateStore.apply` 是 load → reduce → persist 的原子事务边界；内存 actor 在一个隔离区内完成，未来 SwiftData adapter 也必须在单个事务或带版本 CAS 的重试中实现，不能恢复为分离的 `load/save`。Progress mutation 在 `PuzzleSessionController` 内自动提交 autosave，`flush` 仍是进入后台或离开场景前的明确 durability boundary。Artwork 普通查询使用 Store batch snapshot；完成结果直接由同一 completion receipt 的 exact-key `completedAt` map 派生，避免 receipt 与 Artwork state 观察不同并发时刻。
+`StoryStateStore.apply` 是 load → reduce → persist 的原子事务边界；内存 actor 在一个隔离区内完成，Apple `SwiftDataStoryStateStore` 也在单 actor、无 suspension 的 fetch → reduce → encode → `ModelContext.save()` 中完成并在失败时 rollback。该保证仅覆盖 App 内唯一 writer；未来若引入 extension 或多进程 writer，必须增加持久化 CAS/事务，不能依赖 actor。Progress mutation 在 `PuzzleSessionController` 内自动提交 autosave，Undo/Redo 同样在 mutation 后提交；`flush` 仍是进入后台或离开场景前的明确 durability boundary。Artwork 普通查询使用 Store batch snapshot；完成结果直接由同一 completion receipt 的 exact-key `completedAt` map 派生，避免 receipt 与 Artwork state 观察不同并发时刻。
 
 生产 bead/Blueprint hash 直接对原始 JSON 移除顶层 hash 字段后执行 RFC 8785 JCS canonicalization + SHA-256，不从解码后的 Swift semantic object 重构 hash 输入。canonicalizer 直接把 JSON number 解析为 IEEE-754，再按 ECMAScript 阈值输出 shortest round-trip 表示，并拒绝 duplicate object members；CLI 固定 key/string/number conformance vectors。validator 同时拒绝 RGB 越界、generator 空 identity、board/grid 覆盖不一致、重复材料和 export dimension overflow。生产包必须包含唯一 `production-assets-v1` manifest：所有 bead 与 Blueprint revision 以完整 `(ID, revision)` 共存，manifest 通过 revision + hash 为每个稳定 ID 显式选择一个 active 版本；升级与回滚都不能按最大 revision 静默切换。受保护的 Blueprint payload 与 export-plan 构造保持在 ProductDomain SPI 后，App 正常入口只返回经 `BlueprintUseService.openBlueprint` 授权的 `AuthorizedBlueprint`。
 
@@ -546,11 +546,11 @@ Release 使用不可变 tag，记录 App 版本、Museum 内容版本和 commit�
 
 ### M2：技术原型（3–4 周，可部分并行）
 
-当前平台无关基线已具备 catalog-driven session、自动保存/恢复、Artwork `x/n`、Blueprint access/export plan、entitlement 隔离、Museum 1 Story reducer 与综合 CLI 闭环；`Apps/KanakaApp` 已建立 SwiftUI composition root 骨架。以下 Apple 工作仍需 Xcode/真机完成：
+当前 Apple composition 代码已具备 Bundle catalog、Museum → Gallery → Artwork → Fragment 导航、可操作 `5×5` reference board、mutation autosave、Undo/Redo、completion、SwiftData Progress/Story stores、StoreKit 外部映射、授权后 Blueprint PNG/材料导出、Share Sheet 与 scene flush。Bundle 仍使用 synthetic development fixture，且 Linux 只能编译 sentinel。以下 Apple 工作仍需 Xcode/真机完成：
 
-- App shell、彩色 Canvas 棋盘、操作手势、Undo/Redo、SwiftData `UInt8` 存档。
-- Museum → Gallery → Artwork 导航。
-- 验证 revision/hash 不匹配时不会静默解释旧状态；玩家可见的重置与 legacy 重玩路径待迁移政策确认后实现。
+- 建立签名 iOS/iPadOS App host target，编译并修复全部 SwiftUI/SwiftData/StoreKit/Core Graphics 条件分支。
+- 将 reference Grid 棋盘升级/验证为适合 `20×20/25×25` 的 Canvas 或虚拟化渲染，补齐拖拽事务、缩放/平移与 60 fps 门。
+- 用 SwiftData reopen/migration、StoreKit Configuration、PNG golden pixel、Share Sheet、scene suspension 和 accessibility UI tests 验证 adapters。
 
 通过：iPhone/iPad 真机稳定游玩并恢复进度。
 
