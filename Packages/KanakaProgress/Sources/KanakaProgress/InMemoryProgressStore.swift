@@ -92,8 +92,7 @@ public actor InMemoryProgressStore: ProgressStore {
             fragmentKey: key,
             newlyCompleted: newlyCompleted,
             completedCount: completedCount,
-            totalCount: command.requiredFragmentKeys.count,
-            artworkRestored: completedCount == command.requiredFragmentKeys.count
+            totalCount: command.requiredFragmentKeys.count
         )
     }
 

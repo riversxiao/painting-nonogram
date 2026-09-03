@@ -117,6 +117,7 @@ make build
 make validate-fixture
 make validate-session
 make validate-progress
+make validate-access
 ```
 
 `make validate-fixture` 会递归加载 `Content/Fixtures/`，校验 `Museum → Gallery → Artwork → 1–4 RepairFragments → PuzzleDefinition` 的 schema、ID、归属、引用与归一化区域，并逐题执行 clue、semantic hash、唯一精确彩色解和版本化纯逻辑验证；任一文件失败时返回非零。当前 fixture 覆盖全部 `1 / 2 / 3 / 4` Fragment cardinality。需要查看逐题 deduction steps 时，可运行：
@@ -128,3 +129,5 @@ swift run --package-path Tools/kanaka-content kanaka-content validate-puzzles Co
 `make validate-session` 使用代表性 `5×5` 题运行纯核心会话闭环：一次批量完成、Undo/Redo、`UInt8` snapshot round trip、恢复时清空内存 history，以及 assistance 不可通过 Undo 恢复无提示资格。
 
 `make validate-progress` 验证 `KanakaProgress` 持久化契约：节流自动保存合并、显式 flush 与失败重试状态、assistance-only durability、会话恢复 generation、完成期间重入提交保留、两 Fragment Artwork 的 `1/2 → 2/2` 完成事务，以及旧 generation 写入拒绝。内存 Store 可在当前 Linux 基线运行；SwiftData Store 只在 `canImport(SwiftData)` 的 Apple 平台编译，仍需在后续 Xcode / iOS 17（或 macOS 14）环境完成 Apple 分支编译验证。
+
+`make validate-access` 验证 Artwork 的单一访问派生边界：全部当前 Fragment 完成才产生修复状态与印章；匹配的 Museum 蓝图库权益只能授予 Blueprint 使用权，不能修改修复、印章或其他 Museum。该 evaluator 不读取或写入 Story、StoreKit、SwiftData，也不决定 legacy revision 政策。

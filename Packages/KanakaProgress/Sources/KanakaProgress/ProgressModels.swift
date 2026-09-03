@@ -91,22 +91,19 @@ public struct FragmentCompletionReceipt: Equatable, Sendable {
     public let newlyCompleted: Bool
     public let completedCount: Int
     public let totalCount: Int
-    public let artworkRestored: Bool
 
     public init(
         artworkID: String,
         fragmentKey: ProgressRecordKey,
         newlyCompleted: Bool,
         completedCount: Int,
-        totalCount: Int,
-        artworkRestored: Bool
+        totalCount: Int
     ) {
         self.artworkID = artworkID
         self.fragmentKey = fragmentKey
         self.newlyCompleted = newlyCompleted
         self.completedCount = completedCount
         self.totalCount = totalCount
-        self.artworkRestored = artworkRestored
     }
 }
 
