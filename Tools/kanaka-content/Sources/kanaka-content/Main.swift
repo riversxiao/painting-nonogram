@@ -2,6 +2,8 @@ import Foundation
 import KanakaContentKit
 import KanakaCore
 import KanakaProgress
+import KanakaProductDomain
+import KanakaStory
 
 @main
 enum KanakaContentCommand {
@@ -18,10 +20,11 @@ enum KanakaContentCommand {
             case "validate-puzzles":
                 try validatePuzzles(in: URL(fileURLWithPath: arguments[1]))
             case "validate-content":
-                let report = try ContentBundleValidator.validate(
-                    directoryURL: URL(fileURLWithPath: arguments[1])
-                )
+                let directoryURL = URL(fileURLWithPath: arguments[1])
+                let report = try ContentBundleValidator.validate(directoryURL: directoryURL)
+                let catalog = try RuntimeContentCatalog.loadValidated(directoryURL: directoryURL)
                 print(report.formattedDescription)
+                print("  bead patterns: \(catalog.productionAssetCounts.beadPatterns), blueprints: \(catalog.productionAssetCounts.blueprints)")
             case "validate-session":
                 try validateSession(
                     puzzleURL: URL(fileURLWithPath: arguments[1])
@@ -33,6 +36,10 @@ enum KanakaContentCommand {
             case "validate-access":
                 try validateAccess(
                     artworkURL: URL(fileURLWithPath: arguments[1])
+                )
+            case "validate-product-flow":
+                try await validateProductFlow(
+                    directoryURL: URL(fileURLWithPath: arguments[1])
                 )
             default:
                 throw CommandError.usage
@@ -593,6 +600,12 @@ private actor ProgressSmokeStore: ProgressStore {
         try await base.record(for: key)
     }
 
+    func records(
+        for keys: Set<ProgressRecordKey>
+    ) async throws -> [ProgressRecordKey: FragmentProgressRecord] {
+        try await base.records(for: keys)
+    }
+
     func saveSession(
         fragmentID: String,
         snapshot: SavedSessionSnapshot,
@@ -631,11 +644,12 @@ enum CommandError: Error, CustomStringConvertible {
     case sessionValidationFailed(String)
     case progressValidationFailed(String)
     case accessValidationFailed(String)
+    case productValidationFailed(String)
 
     var description: String {
         switch self {
         case .usage:
-            return "Usage:\n  kanaka-content validate-puzzle <puzzle-definition.json>\n  kanaka-content validate-puzzles <directory>\n  kanaka-content validate-content <directory>\n  kanaka-content validate-session <puzzle-definition.json>\n  kanaka-content validate-progress <puzzle-definition.json>\n  kanaka-content validate-access <artwork.json>"
+            return "Usage:\n  kanaka-content validate-puzzle <puzzle-definition.json>\n  kanaka-content validate-puzzles <directory>\n  kanaka-content validate-content <directory>\n  kanaka-content validate-session <puzzle-definition.json>\n  kanaka-content validate-progress <puzzle-definition.json>\n  kanaka-content validate-access <artwork.json>\n  kanaka-content validate-product-flow <content-directory>"
         case .invalidDirectory(let path):
             return "Not a readable directory: \(path)"
         case .noPuzzleDefinitions(let path):
@@ -646,6 +660,8 @@ enum CommandError: Error, CustomStringConvertible {
             return "Progress validation failed: \(reason)"
         case .accessValidationFailed(let reason):
             return "Artwork access validation failed: \(reason)"
+        case .productValidationFailed(let reason):
+            return "Product flow validation failed: \(reason)"
         }
     }
 }

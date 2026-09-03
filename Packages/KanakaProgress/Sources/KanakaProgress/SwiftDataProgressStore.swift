@@ -161,6 +161,17 @@ public actor SwiftDataProgressStore: ProgressStore {
             .map { try $0.domainRecord() }
     }
 
+    public func records(
+        for keys: Set<ProgressRecordKey>
+    ) async throws -> [ProgressRecordKey: FragmentProgressRecord] {
+        var result: [ProgressRecordKey: FragmentProgressRecord] = [:]
+        for entity in try allEntities() where keys.contains(entity.key) {
+            let record = try entity.domainRecord()
+            result[record.key] = record
+        }
+        return result
+    }
+
     public func saveSession(
         fragmentID: String,
         snapshot: SavedSessionSnapshot,
@@ -253,18 +264,19 @@ public actor SwiftDataProgressStore: ProgressStore {
         // Snapshot and completion timestamp become durable in the same context save.
         try context.save()
 
-        let completedKeys = Set(entities.compactMap { item in
-            item.completedAt == nil ? nil : item.key
+        let completedAtByKey = Dictionary(uniqueKeysWithValues: entities.compactMap { item -> (ProgressRecordKey, Date)? in
+            guard command.requiredFragmentKeys.contains(item.key), let completedAt = item.completedAt else {
+                return nil
+            }
+            return (item.key, completedAt)
         })
-        let completedCount = command.requiredFragmentKeys.reduce(into: 0) { count, requiredKey in
-            if completedKeys.contains(requiredKey) { count += 1 }
-        }
         return FragmentCompletionReceipt(
             artworkID: command.artworkID,
             fragmentKey: key,
             newlyCompleted: newlyCompleted,
-            completedCount: completedCount,
-            totalCount: command.requiredFragmentKeys.count
+            completedCount: completedAtByKey.count,
+            totalCount: command.requiredFragmentKeys.count,
+            completedAtByFragmentKey: completedAtByKey
         )
     }
 

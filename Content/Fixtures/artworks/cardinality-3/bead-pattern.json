@@ -1,0 +1,12 @@
+{
+  "schema": "bead-pattern-v1",
+  "assetId": "dev-bead-cardinality-3",
+  "revision": 1,
+  "title": "Fixture Artwork 3",
+  "grid": {"origin": "top-left", "order": "row-major", "width": 2, "height": 2, "cells": [1, 0, 1, 0]},
+  "palette": [{"colorId": "archive-blue", "name": {"en": "Archive Blue", "zh-Hans": "档案蓝"}, "sRGB8": {"r": 44, "g": 76, "b": 112}, "brand": {"name": "Development Palette", "code": "DEV-112", "swatchVersion": "v1"}, "accessibilitySymbol": "A"}],
+  "physical": {"beadPitchMm": 5, "boardLayout": {"columns": 1, "rows": 1, "boardWidth": 2, "boardHeight": 2}},
+  "generator": {"name": "kanaka-fixture", "version": "1"},
+  "provenance": {"sourceType": "original", "sourceRef": "fixture:dev-artwork-cardinality-3", "commercialUseCleared": true},
+  "contentHash": "sha256:94e88447e41cba9ae910d97f9e6c91098c174daf6bf7da5382769b26494fafbd"
+}

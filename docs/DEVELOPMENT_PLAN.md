@@ -15,6 +15,8 @@
 | 游戏核心 | 独立 Swift Package：`KanakaCore` |
 | 内容协议 | 独立 Swift Package：`KanakaContentKit` |
 | 进度协议 | 独立 Swift Package：`KanakaProgress`；内存 Store + Apple 平台 SwiftData adapter |
+| 叙事聚合 | 独立 Swift Package：`KanakaStory`；有序证据、单调 milestones 与幂等 reducer |
+| 产品应用层 | 独立 Swift Package：`KanakaProductDomain`；组合内容、进度、权益、Blueprint 与 Story |
 | 本地存储 | SwiftData；玩家格状态按每格 `UInt8` 压缩为单个 `Data` blob |
 | 权益 | StoreKit 2 + 可测试的 entitlement resolver |
 | 音视频 | AVFoundation / AVKit |
@@ -53,6 +55,8 @@ painting-nonogram/
 │   ├── KanakaCore/
 │   ├── KanakaContentKit/
 │   ├── KanakaProgress/
+│   ├── KanakaStory/
+│   ├── KanakaProductDomain/
 │   └── KanakaDesignSystem/
 ├── Tools/
 │   └── kanaka-content/
@@ -411,6 +415,14 @@ validate-source
 
 当前 completion receipt 刻意只认可当前精确 identity。旧 revision 是否继续认可 Artwork 完成仍属于待冻结的玩家迁移政策；在政策确认前，不自动删除、覆盖、重置或认可 legacy completion。
 
+`KanakaProductDomain` 采用确定性 reconciliation 连接 durable completion 与 `KanakaStory`：一次 exact-current batch progress snapshot 为全 catalog 构造候选，再按 Story rule 顺序推进可用前缀；先完成的后序内容会保留在 durable progress 中，并在前序证据出现后自动收敛。Fragment 与 Artwork occurrence 使用包含 `fragmentID / puzzleID / revision / semanticHash` 的版本化长度前缀 canonical bytes 计算 SHA-256；Artwork 时间取所有构成 Fragment 的 durable `completedAt` 最大值，因此重放 byte-for-byte 稳定。completion mapping 在 ProductFlow 初始化时校验 catalog 实体、规则 source kind 与 evidence 唯一性，narrative/bridge API 不能构造 completion source。
+
+`StoryStateStore.apply` 是 load → reduce → persist 的原子事务边界；内存 actor 在一个隔离区内完成，未来 SwiftData adapter 也必须在单个事务或带版本 CAS 的重试中实现，不能恢复为分离的 `load/save`。Progress mutation 在 `PuzzleSessionController` 内自动提交 autosave，`flush` 仍是进入后台或离开场景前的明确 durability boundary。Artwork 普通查询使用 Store batch snapshot；完成结果直接由同一 completion receipt 的 exact-key `completedAt` map 派生，避免 receipt 与 Artwork state 观察不同并发时刻。
+
+生产 bead/Blueprint hash 直接对原始 JSON 移除顶层 hash 字段后执行 RFC 8785 JCS canonicalization + SHA-256，不从解码后的 Swift semantic object 重构 hash 输入。canonicalizer 直接把 JSON number 解析为 IEEE-754，再按 ECMAScript 阈值输出 shortest round-trip 表示，并拒绝 duplicate object members；CLI 固定 key/string/number conformance vectors。validator 同时拒绝 RGB 越界、generator 空 identity、board/grid 覆盖不一致、重复材料和 export dimension overflow。生产包必须包含唯一 `production-assets-v1` manifest：所有 bead 与 Blueprint revision 以完整 `(ID, revision)` 共存，manifest 通过 revision + hash 为每个稳定 ID 显式选择一个 active 版本；升级与回滚都不能按最大 revision 静默切换。受保护的 Blueprint payload 与 export-plan 构造保持在 ProductDomain SPI 后，App 正常入口只返回经 `BlueprintUseService.openBlueprint` 授权的 `AuthorizedBlueprint`。
+
+这些选择不冻结未来 outbox schema，也不允许 entitlement、Blueprint 浏览或导出产生 Canon evidence。当前 Linux gate 无法编译 SwiftUI/SwiftData/StoreKit/Core Graphics 等 Apple 分支；其结果必须明确视为 Xcode/iOS 17/macOS 14 待验证项。
+
 ## 10. Blueprint V1 输出
 
 V1 必须提供：
@@ -533,6 +545,8 @@ Release 使用不可变 tag，记录 App 版本、Museum 内容版本和 commit�
 通过：内容可一键编译；颜色语义、数量、区域、ID、hash、引用或解法错误会阻断构建。
 
 ### M2：技术原型（3–4 周，可部分并行）
+
+当前平台无关基线已具备 catalog-driven session、自动保存/恢复、Artwork `x/n`、Blueprint access/export plan、entitlement 隔离、Museum 1 Story reducer 与综合 CLI 闭环；`Apps/KanakaApp` 已建立 SwiftUI composition root 骨架。以下 Apple 工作仍需 Xcode/真机完成：
 
 - App shell、彩色 Canvas 棋盘、操作手势、Undo/Redo、SwiftData `UInt8` 存档。
 - Museum → Gallery → Artwork 导航。

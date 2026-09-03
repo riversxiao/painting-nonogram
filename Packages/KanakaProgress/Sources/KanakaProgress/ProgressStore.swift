@@ -7,6 +7,11 @@ public protocol ProgressStore: Sendable {
     /// Fetches one exact identity without requiring sibling revisions to decode successfully.
     func record(for key: ProgressRecordKey) async throws -> FragmentProgressRecord?
 
+    /// Reads one coherent exact-key snapshot. Missing keys are omitted.
+    func records(
+        for keys: Set<ProgressRecordKey>
+    ) async throws -> [ProgressRecordKey: FragmentProgressRecord]
+
     func saveSession(
         fragmentID: String,
         snapshot: SavedSessionSnapshot,

@@ -17,6 +17,16 @@ public actor InMemoryProgressStore: ProgressStore {
         return recordsByKey[key]
     }
 
+    public func records(
+        for keys: Set<ProgressRecordKey>
+    ) async throws -> [ProgressRecordKey: FragmentProgressRecord] {
+        var result: [ProgressRecordKey: FragmentProgressRecord] = [:]
+        for key in keys {
+            if let record = recordsByKey[key] { result[key] = record }
+        }
+        return result
+    }
+
     public func saveSession(
         fragmentID: String,
         snapshot: SavedSessionSnapshot,
@@ -84,15 +94,16 @@ public actor InMemoryProgressStore: ProgressStore {
             completedAt: existing?.completedAt ?? command.completedAt
         )
 
-        let completedCount = command.requiredFragmentKeys.reduce(into: 0) { count, requiredKey in
-            if recordsByKey[requiredKey]?.completedAt != nil { count += 1 }
-        }
+        let completedAtByKey = Dictionary(uniqueKeysWithValues: command.requiredFragmentKeys.compactMap { requiredKey in
+            recordsByKey[requiredKey]?.completedAt.map { (requiredKey, $0) }
+        })
         return FragmentCompletionReceipt(
             artworkID: command.artworkID,
             fragmentKey: key,
             newlyCompleted: newlyCompleted,
-            completedCount: completedCount,
-            totalCount: command.requiredFragmentKeys.count
+            completedCount: completedAtByKey.count,
+            totalCount: command.requiredFragmentKeys.count,
+            completedAtByFragmentKey: completedAtByKey
         )
     }
 
