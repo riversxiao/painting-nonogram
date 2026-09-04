@@ -1,9 +1,9 @@
 {
   "schema": "artwork-v1",
   "id": "dev-artwork-cardinality-1",
-  "revision": 1,
+  "revision": 2,
   "museumID": "dev-museum-cardinality",
   "galleryID": "dev-gallery-cardinality",
-  "repairFragmentIDs": ["m1-g1-a01-f01"],
+  "repairFragmentIDs": ["m1-g1-a01-f01", "dev-a1-f02"],
   "blueprintID": "dev-blueprint-cardinality-1"
 }

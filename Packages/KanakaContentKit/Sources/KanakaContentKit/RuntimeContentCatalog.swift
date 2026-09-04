@@ -56,6 +56,7 @@ public struct RuntimeContentCatalog: Sendable {
     public let artworks: [String: ArtworkDefinition]
     public let fragments: [String: RepairFragmentDefinition]
     public let puzzles: [String: PuzzleDefinition]
+    public let experience: PlayableExperienceDefinition
     private let beadPatterns: [String: BeadPatternDefinition]
     private let blueprints: [String: BlueprintDefinition]
 
@@ -154,6 +155,25 @@ public struct RuntimeContentCatalog: Sendable {
         let fragmentMap = try unique(fragments, kind: "Fragment", id: \.id)
         let puzzleMap = try unique(puzzles, kind: "Puzzle", id: \.id)
 
+        let experienceURLs = files["playable-experience.json", default: []]
+        guard experienceURLs.count == 1 else {
+            throw RuntimeContentCatalogError.inconsistent(
+                "exactly one playable-experience.json definition is required"
+            )
+        }
+        let experience = try decode(
+            experienceURLs,
+            as: PlayableExperienceDefinition.self
+        )[0]
+        try PlayableExperienceValidator.validate(
+            experience,
+            museumIDs: Set(museumMap.keys),
+            galleryIDs: Set(galleryMap.keys),
+            artworkIDs: Set(artworkMap.keys),
+            fragmentIDs: Set(fragmentMap.keys),
+            puzzles: puzzleMap
+        )
+
         for blueprint in activeBlueprints.values {
             guard let activeSource = activeBeadPatterns[blueprint.sourceBeadAsset.assetID],
                   activeSource.revision == blueprint.sourceBeadAsset.revision,
@@ -188,6 +208,7 @@ public struct RuntimeContentCatalog: Sendable {
             artworks: artworkMap,
             fragments: fragmentMap,
             puzzles: puzzleMap,
+            experience: experience,
             beadPatterns: activeBeadPatterns,
             blueprints: activeBlueprints
         )
@@ -320,7 +341,7 @@ public struct RuntimeContentCatalog: Sendable {
         let accepted = Set([
             "museum.json", "gallery.json", "artwork.json", "fragment.json",
             "puzzle-definition.json", "bead-pattern.json", "blueprint.json",
-            "production-assets.json",
+            "production-assets.json", "playable-experience.json",
         ])
         var result: [String: [URL]] = [:]
         for case let url as URL in enumerator where accepted.contains(url.lastPathComponent) {

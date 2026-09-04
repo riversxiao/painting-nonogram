@@ -41,6 +41,10 @@ enum KanakaContentCommand {
                 try await validateProductFlow(
                     directoryURL: URL(fileURLWithPath: arguments[1])
                 )
+            case "validate-playable-experience":
+                try await validatePlayableExperience(
+                    directoryURL: URL(fileURLWithPath: arguments[1])
+                )
             default:
                 throw CommandError.usage
             }
@@ -645,11 +649,12 @@ enum CommandError: Error, CustomStringConvertible {
     case progressValidationFailed(String)
     case accessValidationFailed(String)
     case productValidationFailed(String)
+    case experienceValidationFailed(String)
 
     var description: String {
         switch self {
         case .usage:
-            return "Usage:\n  kanaka-content validate-puzzle <puzzle-definition.json>\n  kanaka-content validate-puzzles <directory>\n  kanaka-content validate-content <directory>\n  kanaka-content validate-session <puzzle-definition.json>\n  kanaka-content validate-progress <puzzle-definition.json>\n  kanaka-content validate-access <artwork.json>\n  kanaka-content validate-product-flow <content-directory>"
+            return "Usage:\n  kanaka-content validate-puzzle <puzzle-definition.json>\n  kanaka-content validate-puzzles <directory>\n  kanaka-content validate-content <directory>\n  kanaka-content validate-session <puzzle-definition.json>\n  kanaka-content validate-progress <puzzle-definition.json>\n  kanaka-content validate-access <artwork.json>\n  kanaka-content validate-product-flow <content-directory>\n  kanaka-content validate-playable-experience <content-directory>"
         case .invalidDirectory(let path):
             return "Not a readable directory: \(path)"
         case .noPuzzleDefinitions(let path):
@@ -662,6 +667,8 @@ enum CommandError: Error, CustomStringConvertible {
             return "Artwork access validation failed: \(reason)"
         case .productValidationFailed(let reason):
             return "Product flow validation failed: \(reason)"
+        case .experienceValidationFailed(let reason):
+            return "Playable experience validation failed: \(reason)"
         }
     }
 }

@@ -370,6 +370,7 @@ validate-source
 10. 每个正式 puzzle 在无预填条件下恰好一个精确彩色解且可纯逻辑完成；若含预填，必须属于明确标记的教学、演示或无障碍辅助例外。
 11. bead asset、Blueprint 与 puzzle semantic hashes 分离且完整；revision、迁移信息、本地化、人工试玩记录和权利记录完整。
 12. Museum 1 编译结果必须恰为 18 Artworks / 30 Fragments，Fragment 分布为 `10×1 + 5×2 + 2×3 + 1×4`，Gallery 计数依次为 `6/8`、`6/10`、`6/12`。
+13. `playable-experience-v1` sidecar 必须精确覆盖已编入的 Museum/Gallery/Artwork/Fragment IDs，包含非空默认 locale、完整 intro、唯一 `5×5` tutorial Puzzle 引用和修复室/工坊两个入口；展示 sidecar 不得进入 Puzzle、bead、Blueprint 或 progress identity/hash。
 
 机器校验之外，发布内容还必须存在与 Artwork 一对一映射的 `curation-manifest-v1` approved 记录：`candidateAssetID`、`artworkID`、`galleryID`、`chapterBeatID`、`sequenceIndex`、主要叙事岗位、整幅负担带、`fragmentTargets`、`worldMode`、`rightsStatus=cleared` 与完整 `evidenceRefs`。CLI 验证字段、枚举、条件必填、唯一映射、同 Gallery 顺序和引用完整性；叙事匹配、恢复辨识和画境体验由 `CONTENT_CURATION.md` 定义的人工审查负责。
 
@@ -462,6 +463,8 @@ StoreKit 实现仍需监听 transaction updates、验证与恢复权益、使用
 - bead asset / Blueprint / puzzle semantic hash 相互独立。
 - 仅元数据/预览更新保持 puzzle progress；答案 revision 更新绝不静默复用旧状态。具体的重置/legacy 保留测试在玩家迁移政策确认后加入。
 - `GameSession` 操作序列。
+- 首次体验 reducer 只允许 `intro → tutorial completed/skipped → initial route` 单调转换；教学使用独立 `GameSession`，不得写 Fragment Progress、恢复 Artwork、授予 seal/Blueprint 或提交 Story evidence。
+- `playable-experience-v1` 的本地化、实体展示与完成文案必须精确覆盖 catalog，展示 revision 不改变游戏事实 identity/hash。
 - Undo/Redo 与 hint 合法性。
 - count 为 0、1、4、5 的边界。
 - 全部配置 Fragment 参与完成。

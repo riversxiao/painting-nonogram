@@ -1,16 +1,24 @@
 #if canImport(SwiftUI) && canImport(SwiftData) && canImport(StoreKit)
+import Foundation
 import KanakaContentKit
 import KanakaCore
+import KanakaProductDomain
 import SwiftUI
 
 struct PuzzleScreen: View {
     @EnvironmentObject private var appModel: KanakaAppModel
     @StateObject private var model: PuzzleViewModel
+    private let experience: PlayableExperienceDefinition
+    private let fragmentPresentation: ExperienceEntityPresentation?
+    private let artworkPresentation: ExperienceEntityPresentation?
 
     init(services: KanakaAppServices, fragment: RepairFragmentDefinition) {
         guard let puzzle = services.catalog.puzzles[fragment.puzzleDefinitionID] else {
             preconditionFailure("Validated catalog lost Puzzle \(fragment.puzzleDefinitionID)")
         }
+        experience = services.catalog.experience
+        fragmentPresentation = services.catalog.experience.fragment(fragment.id)
+        artworkPresentation = services.catalog.experience.artwork(fragment.artworkID)
         _model = StateObject(wrappedValue: PuzzleViewModel(
             services: services,
             fragmentID: fragment.id,
@@ -47,7 +55,12 @@ struct PuzzleScreen: View {
                             .disabled(model.isSaving || model.outcome != nil)
                         }
                         if let outcome = model.outcome {
-                            CompletionSummary(outcome: outcome)
+                            CompletionSummary(
+                                outcome: outcome,
+                                experience: experience,
+                                fragmentPresentation: fragmentPresentation,
+                                artworkPresentation: artworkPresentation
+                            )
                         }
                     }
                     .padding()
@@ -58,7 +71,9 @@ struct PuzzleScreen: View {
                 ContentUnavailableView("无法打开谜题", systemImage: "exclamationmark.triangle")
             }
         }
-        .navigationTitle(displayName(model.fragmentID))
+        .navigationTitle(fragmentPresentation.map {
+            experience.text($0.title, preferredLocales: Locale.preferredLanguages)
+        } ?? displayName(model.fragmentID))
         .task { await model.load() }
         .onDisappear { model.beginClosing() }
         .alert("修复操作失败", isPresented: Binding(
@@ -157,22 +172,57 @@ private struct ToolPalette: View {
 
 private struct CompletionSummary: View {
     let outcome: FragmentCompletionOutcome
+    let experience: PlayableExperienceDefinition
+    let fragmentPresentation: ExperienceEntityPresentation?
+    let artworkPresentation: ExperienceEntityPresentation?
+
+    private var feedback: CompletionFeedback { CompletionFeedback(outcome: outcome) }
 
     var body: some View {
         VStack(spacing: 8) {
-            Label("片段已持久化", systemImage: "checkmark.circle.fill")
-                .foregroundStyle(.green)
-            Text("作品进度 \(outcome.receipt.completedCount) / \(outcome.receipt.totalCount)")
-            if outcome.artworkState.access.artworkRestored {
-                Text("整幅作品已恢复，Blueprint 与亲手修复印章已解锁。")
+            Label(
+                localized(fragmentPresentation?.completionTitle) ?? "片段已持久化",
+                systemImage: "checkmark.circle.fill"
+            )
+            .foregroundStyle(.green)
+            if let body = localized(fragmentPresentation?.completionBody) {
+                Text(body).multilineTextAlignment(.center)
+            }
+            Text("作品进度 \(feedback.completedCount) / \(feedback.totalCount)")
+            if feedback.isArtworkRestored {
+                Divider()
+                Text(localized(artworkPresentation?.completionTitle) ?? "整幅作品已恢复")
                     .font(.headline)
                     .multilineTextAlignment(.center)
+                if let body = localized(artworkPresentation?.completionBody) {
+                    Text(body)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                if feedback.blueprintAvailable && feedback.restorerSealAwarded {
+                    Label("Blueprint 与亲手修复印章已解锁", systemImage: "seal.fill")
+                }
+            } else {
+                Text("继续修复其余片段即可恢复整幅作品。")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(feedback.newlyAchievedMilestones, id: \.self) { milestone in
+                Label("故事里程碑：\(displayName(milestone.rawValue))", systemImage: "book.closed.fill")
+                    .font(.footnote)
             }
         }
         .padding()
         .background(.green.opacity(0.12), in: RoundedRectangle(cornerRadius: 12))
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(.isStaticText)
+    }
+
+    private func localized(_ value: LocalizedText?) -> String? {
+        value.map {
+            experience.text($0, preferredLocales: Locale.preferredLanguages)
+        }
     }
 }
 

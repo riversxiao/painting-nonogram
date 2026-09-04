@@ -4,16 +4,18 @@
 
 ## 已实现的 Apple 代码路径
 
-- Bundle-backed validated development catalog；
+- Bundle-backed validated two-Fragment development catalog；
+- `playable-experience-v1` sidecar 驱动的中英文本地化标题、介绍与完成反馈；
+- 首次世界观介绍、独立且可跳过的 `5×5` 教学，以及修复室/拼豆工坊初始入口；
 - Museum → Gallery → Artwork → Repair Fragment 导航；
-- 可操作 `5×5` 彩色 Nonogram reference board，含颜色符号、排除/擦除、Undo/Redo、autosave 与完成提交；
+- 可操作 `5×5 + 1×1` 两阶段彩色 Nonogram reference flow，含颜色符号、排除/擦除、Undo/Redo、autosave 与中间/最终完成反馈；
 - 分别使用命名 `KanakaProgress` / `KanakaStory` 配置的 `SwiftDataProgressStore` 与原子 `SwiftDataStoryStateStore`，避免默认持久化文件碰撞；
 - scene phase 与离开棋盘时对所有 active controller 执行 `flush()`；
 - 外部 `entitlements.json` 商品→Museum 映射、StoreKit 2 verified current entitlements、购买监听、购买与恢复；
 - 只接受 `AuthorizedBlueprint` 的 Core Graphics/ImageIO PNG renderer（20 MP ceiling、逐格稳定符号）、材料清单、临时 workspace 与系统分享；
 - 档案 milestone、错误状态、Dynamic Type 基础和逐格非颜色 accessibility labels。
 
-Bundle 中内容是 synthetic single-Fragment development fixture，不是 Museum 1 正式发布资产。商品配置默认为空；SKU、价格、免费组合继续由外部配置决定。Story completion mapping 对 development fixture 保持为空，不冒充 Museum 1 Canon。
+Bundle 中内容是 synthetic two-Fragment development fixture，不是 Museum 1 正式发布资产。教学直接使用独立 `GameSession`，完成或跳过都不会写入 Fragment Progress、恢复 Artwork 或提交 Story evidence；首次启动状态单独保存于版本化 UserDefaults 记录。商品配置默认为空；SKU、价格、免费组合继续由外部配置决定。Story completion mapping 对 development fixture 保持为空，不冒充 Museum 1 Canon。
 
 ## 仍需 Apple/Xcode 验证
 

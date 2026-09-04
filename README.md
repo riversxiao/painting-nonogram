@@ -119,6 +119,7 @@ make validate-session
 make validate-progress
 make validate-access
 make validate-product
+make validate-experience
 make validate-app
 ```
 
@@ -136,6 +137,8 @@ swift run --package-path Tools/kanaka-content kanaka-content validate-puzzles Co
 
 `make validate-product` 运行整体产品闭环：加载并交叉校验 Museum/Gallery/Artwork/Fragment/Puzzle/BeadPattern/Blueprint catalog，以原始 JSON 删除顶层 hash 字段后执行 RFC 8785 JCS + SHA-256（含 ECMAScript number 与 duplicate-member vectors），并拒绝 hash 漂移、越界 RGB、board/grid 不一致、重复材料、多字素辅助符号和低于 8 px/cell 的 Blueprint 导出。`production-assets-v1` manifest 以 `(assetId, revision, hash)` / `(blueprintId, revision, hash)` 显式选择 active revision；CLI 同时装入两代资产并验证升级与回滚都只由 manifest 决定。场景以真实 Fragment ID 打开，变更时自动调度保存，flush 后重启恢复并乱序完成两题；验证原子 `0/2 → 1/2 → 2/2`、完成快照对 live/pre-completion/reopened controllers 均不可变、earned/entitled Blueprint、材料与 PNG 语义导出计划、entitlement 隔离、映射 capability 校验、并发 Story 原子提交，以及 catalog-wide canonical reconciliation 自动收敛。Museum 1 另验证 `28` 个有序 Canon evidence → `7` 个单调 milestones。
 
-`make validate-app` 校验 App Bundle 中的独立单 Artwork 开发 catalog，并构建/运行 Linux sentinel。Apple 分支现已实现真实 composition：Museum → Gallery → Artwork → Fragment → `5×5` 彩色棋盘、mutation autosave、Undo/Redo、completion receipt、Workshop 授权、材料/PNG 导出、StoreKit 外部商品映射、SwiftData Story 原子 Store 与 scene-phase session flush。Bundle 内容仍是 synthetic development fixture，不是 Museum 1 正式内容。
+`make validate-experience` 校验独立的 `playable-experience-v1` 展示 sidecar：intro、5×5 tutorial、修复室/工坊双入口以及 Museum/Gallery/Artwork/Fragment 本地化必须与事实 catalog 精确覆盖。CLI 同时执行两个 onboarding 分支（完成或跳过教学）、版本化状态 round trip、独立 tutorial `GameSession` 不写入 Progress/Story，以及两 Fragment Artwork 的中间 `1/2` 与最终 `2/2` feedback/Blueprint/seal 边界。展示文案修改不改变 hierarchy、Puzzle、bead 或 Blueprint identity/hash。
+
+`make validate-app` 校验 App Bundle 中的独立单 Artwork/两 Fragment 开发 catalog，运行同一 playable-experience gate，并构建/运行 Linux sentinel。Apple 分支现已实现首次世界观介绍、可跳过且不写作品进度的 `5×5` 教学、修复室/拼豆工坊初始入口、Museum → Gallery → Artwork → Fragment 导航、`5×5 + 1×1` 两阶段修复、mutation autosave、Undo/Redo、阶段化 completion feedback、Workshop 授权、材料/PNG 导出、StoreKit 外部商品映射、SwiftData Story 原子 Store 与 scene-phase session flush。Bundle 内容仍是 synthetic development fixture，不是 Museum 1 正式内容。
 
 当前 Linux gate 只能证明 App 资源契约、依赖方向与 fallback sentinel；它不会编译 `canImport(SwiftUI/SwiftData/StoreKit/CoreGraphics)` 内的实现。真正的 SwiftUI 布局与手势、SwiftData transaction visibility、StoreKit Configuration、PNG 像素结果、Share Sheet、scene suspension、VoiceOver 和真机性能仍必须由 Xcode/iOS 17 或 macOS 14 SDK gate 验证。当前 Swift Package 也仍需由实际签名的 iOS App host target 集成后才能安装到设备。

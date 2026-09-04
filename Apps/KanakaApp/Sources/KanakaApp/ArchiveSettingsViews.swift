@@ -80,6 +80,12 @@ struct SettingsView: View {
                 Label("支持 Dynamic Type 与系统 Reduce Motion", systemImage: "textformat.size")
             }
 
+            Section("体验") {
+                Button("重新运行首次启动与教学") {
+                    Task { await model.resetPlayableExperience() }
+                }
+            }
+
             Section("数据边界") {
                 Text("进度、Story 与已验证交易分别持久化；购买不会完成谜题或推进 Story。")
                     .font(.footnote)
