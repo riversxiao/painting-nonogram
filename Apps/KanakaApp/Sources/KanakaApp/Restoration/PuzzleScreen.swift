@@ -12,7 +12,11 @@ struct PuzzleScreen: View {
     private let fragmentPresentation: ExperienceEntityPresentation?
     private let artworkPresentation: ExperienceEntityPresentation?
 
-    init(services: KanakaAppServices, fragment: RepairFragmentDefinition) {
+    init(
+        services: KanakaAppServices,
+        fragment: RepairFragmentDefinition,
+        progressDidChange: @escaping () -> Void = {}
+    ) {
         guard let puzzle = services.catalog.puzzles[fragment.puzzleDefinitionID] else {
             preconditionFailure("Validated catalog lost Puzzle \(fragment.puzzleDefinitionID)")
         }
@@ -22,7 +26,8 @@ struct PuzzleScreen: View {
         _model = StateObject(wrappedValue: PuzzleViewModel(
             services: services,
             fragmentID: fragment.id,
-            puzzle: puzzle
+            puzzle: puzzle,
+            progressDidChange: progressDidChange
         ))
     }
 

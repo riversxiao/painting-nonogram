@@ -29,11 +29,18 @@ final class PuzzleViewModel: ObservableObject {
     private var registryToken: UUID?
     private var operationTail: Task<Void, Never>?
     private var closeTask: Task<Void, Never>?
+    private let progressDidChange: () -> Void
 
-    init(services: KanakaAppServices, fragmentID: String, puzzle: PuzzleDefinition) {
+    init(
+        services: KanakaAppServices,
+        fragmentID: String,
+        puzzle: PuzzleDefinition,
+        progressDidChange: @escaping () -> Void = {}
+    ) {
         self.services = services
         self.fragmentID = fragmentID
         self.puzzle = puzzle
+        self.progressDidChange = progressDidChange
         selectedTool = puzzle.palette.first.map { .fill($0.colorId) } ?? .exclude
     }
 
@@ -123,6 +130,7 @@ final class PuzzleViewModel: ObservableObject {
                 )
                 self.session = await controller.currentSession()
                 self.isReadOnly = true
+                self.progressDidChange()
             } catch {
                 self.errorMessage = String(describing: error)
             }
@@ -134,8 +142,9 @@ final class PuzzleViewModel: ObservableObject {
     func beginClosing() {
         guard !isClosing else { return }
         isClosing = true
-        closeTask = Task { [weak self] in
-            await self?.finishClosing()
+        closeTask = Task { [self] in
+            await finishClosing()
+            closeTask = nil
         }
     }
 
@@ -154,6 +163,7 @@ final class PuzzleViewModel: ObservableObject {
                 } else if let controller = self.controller {
                     try await controller.flush()
                 }
+                self.progressDidChange()
             } catch {
                 self.errorMessage = "离开前保存失败：\(error)"
             }

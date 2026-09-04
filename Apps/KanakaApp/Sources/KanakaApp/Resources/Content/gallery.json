@@ -1,8 +1,8 @@
 {
   "schema": "gallery-v1",
-  "id": "dev-gallery-cardinality",
+  "id": "dev-gallery-restoration-pack",
   "revision": 1,
-  "museumID": "dev-museum-cardinality",
-  "chapterNarrativeID": "dev-chapter-cardinality",
-  "artworkIDs": ["dev-artwork-cardinality-1"]
+  "museumID": "dev-museum-restoration-pack",
+  "chapterNarrativeID": "dev-chapter-restoration-pack",
+  "artworkIDs": ["dev-artwork-restoration-pack"]
 }

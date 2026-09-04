@@ -1,8 +1,0 @@
-{
-  "schema": "repair-fragment-v1",
-  "id": "m1-g1-a01-f01",
-  "revision": 1,
-  "artworkID": "dev-artwork-cardinality-1",
-  "region": {"x": 0.10, "y": 0.10, "width": 0.25, "height": 0.25},
-  "puzzleDefinitionID": "m1-g1-a01-f01-p01"
-}

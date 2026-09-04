@@ -121,6 +121,7 @@ make validate-progress
 make validate-access
 make validate-product
 make validate-experience
+make validate-restoration-pack
 make validate-app
 ```
 
@@ -140,8 +141,10 @@ swift run --package-path Tools/kanaka-content kanaka-content validate-puzzles Co
 
 `make validate-product` 运行整体产品闭环：加载并交叉校验 Museum/Gallery/Artwork/Fragment/Puzzle/BeadPattern/Blueprint catalog，以原始 JSON 删除顶层 hash 字段后执行 RFC 8785 JCS + SHA-256（含 ECMAScript number 与 duplicate-member vectors），并拒绝 hash 漂移、越界 RGB、board/grid 不一致、重复材料、多字素辅助符号和低于 8 px/cell 的 Blueprint 导出。`production-assets-v1` manifest 以 `(assetId, revision, hash)` / `(blueprintId, revision, hash)` 显式选择 active revision；CLI 同时装入两代资产并验证升级与回滚都只由 manifest 决定。场景以真实 Fragment ID 打开，变更时自动调度保存，flush 后重启恢复并乱序完成两题；验证原子 `0/2 → 1/2 → 2/2`、完成快照对 live/pre-completion/reopened controllers 均不可变、earned/entitled Blueprint、材料与 PNG 语义导出计划、entitlement 隔离、映射 capability 校验、并发 Story 原子提交，以及 catalog-wide canonical reconciliation 自动收敛。Museum 1 另验证 `28` 个有序 Canon evidence → `7` 个单调 milestones。
 
-`make validate-experience` 校验独立的 `playable-experience-v1` 展示 sidecar：intro、5×5 tutorial、修复室/工坊双入口以及 Museum/Gallery/Artwork/Fragment 本地化必须与事实 catalog 精确覆盖。CLI 同时执行两个 onboarding 分支（完成或跳过教学）、版本化状态 round trip、独立 tutorial `GameSession` 不写入 Progress/Story，以及两 Fragment Artwork 的中间 `1/2` 与最终 `2/2` feedback/Blueprint/seal 边界。展示文案修改不改变 hierarchy、Puzzle、bead 或 Blueprint identity/hash。
+`make validate-experience` 校验独立的 `playable-experience-v1` 展示 sidecar：intro、5×5 tutorial、修复室/工坊双入口以及 Museum/Gallery/Artwork/Fragment 本地化必须与事实 catalog 精确覆盖。CLI 同时执行两个 onboarding 分支（完成或跳过教学）、版本化状态 round trip、独立 tutorial `GameSession` 不写入 Progress/Story，以及任意多 Fragment Artwork 的中间 `1/n` 与最终 `n/n` feedback/Blueprint/seal 边界。展示文案修改不改变 hierarchy、Puzzle、bead 或 Blueprint identity/hash。
 
-`make validate-app` 校验 App Bundle 中的独立单 Artwork/两 Fragment 开发 catalog，运行同一 playable-experience gate，并构建/运行 Linux sentinel。Apple 分支现已实现首次世界观介绍、可跳过且不写作品进度的 `5×5` 教学、修复室/拼豆工坊初始入口、Museum → Gallery → Artwork → Fragment 导航、`5×5 + 1×1` 两阶段修复、单 Canvas 棋盘、一次拖画一个 batch、轴锁、缩放/平移模式、逻辑光标 accessibility actions、mutation autosave、Undo/Redo、阶段化 completion feedback、Workshop 授权、材料/PNG 导出、StoreKit 外部商品映射、SwiftData Story 原子 Store 与 scene-phase session flush。Bundle 内容仍是 synthetic development fixture，不是 Museum 1 正式内容。
+`make validate-restoration-pack` 是 v0.4 App 开发包的专用 Linux gate：固定验证一个 synthetic/non-Canon Museum、Gallery、Artwork，三片段区域完整分区，以及 `5×5 → 10×10 → 15×15` 正式彩色题。它从 exact-current 单次快照验证未开始/进行中/已完成三态、打开但不修改不写进度、编辑后 flush/reopen 恢复，并乱序完成 `0/3 → 1/3 → 2/3 → 3/3`；匹配 Museum entitlement 只能提前开放 Blueprint、无关 entitlement 保持拒绝，二者都不能改变 Progress/印章/Story；无权益流程的中间阶段不能提前授予恢复/Blueprint/印章，最终才解锁 15×15 Blueprint。
+
+`make validate-app` 校验 App Bundle 中的单 Artwork/三 Fragment realistic development pack，运行 playable-experience 与 restoration-pack gate，并构建/运行 Linux sentinel。Apple 分支现已实现首次世界观介绍、可跳过且不写作品进度的 `5×5` 教学、修复室/拼豆工坊初始入口、Museum → Gallery → Artwork → Fragment 导航、`5×5 + 10×10 + 15×15` 三阶段修复、未开始/继续/已完成状态、按 Fragment region 渐进恢复预览、单 Canvas 棋盘、一次拖画一个 batch、轴锁、缩放/平移模式、逻辑光标 accessibility actions、mutation autosave、Undo/Redo、阶段化 completion feedback、Workshop 授权、材料/PNG 导出、StoreKit 外部商品映射、SwiftData Story 原子 Store 与 scene-phase session flush。Bundle 内容是原创合成、商业使用已清理且明确非正典的 development fixture，不是 Museum 1 正式内容。
 
 当前 Linux gate 只能证明 App 资源契约、依赖方向与 fallback sentinel；它不会编译 `canImport(SwiftUI/SwiftData/StoreKit/CoreGraphics)` 内的实现。真正的 SwiftUI 布局与手势、SwiftData transaction visibility、StoreKit Configuration、PNG 像素结果、Share Sheet、scene suspension、VoiceOver 和真机性能仍必须由 Xcode/iOS 17 或 macOS 14 SDK gate 验证。当前 Swift Package 也仍需由实际签名的 iOS App host target 集成后才能安装到设备。

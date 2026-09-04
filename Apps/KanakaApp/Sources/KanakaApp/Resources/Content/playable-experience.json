@@ -1,56 +1,101 @@
 {
   "schema": "playable-experience-v1",
-  "revision": 1,
+  "revision": 2,
   "defaultLocale": "zh-Hans",
   "supportedLocales": ["zh-Hans", "en"],
   "introPages": [
     {
-      "id": "long-night",
-      "title": {"zh-Hans": "长夜之后", "en": "After the Long Night"},
-      "body": {"zh-Hans": "图像仍然存在，但它们与记忆和意义之间的联系正在消失。", "en": "Images remain, but their connection to memory and meaning is fading."},
-      "symbolName": "moon.stars"
+      "id": "synthetic-restoration-lab",
+      "title": {"zh-Hans": "合成修复实验室", "en": "Synthetic Restoration Lab"},
+      "body": {"zh-Hans": "本开发包使用原创合成、商业使用已获许可的非正典图像，专用于验证完整修复流程。", "en": "This development pack uses original synthetic, commercially cleared, non-Canon imagery solely to validate the complete restoration flow."},
+      "symbolName": "building.columns"
     },
     {
-      "id": "restoration-agency",
-      "title": {"zh-Hans": "文明修复署", "en": "Civilization Restoration Agency"},
-      "body": {"zh-Hans": "读取行列线索，修复真实受损区域，并保存可以再次制作的作品蓝图。", "en": "Read the clues, repair damaged regions, and preserve buildable blueprints."},
-      "symbolName": "building.columns"
+      "id": "dusk-harbor-signal",
+      "title": {"zh-Hans": "暮色港湾信号", "en": "Dusk Harbor Signal"},
+      "body": {"zh-Hans": "依次解读三种尺寸的彩色行列线索，让灯塔、信标与港湾色层重新连成一幅作品。", "en": "Read three sizes of colored line clues to reconnect the lighthouse, beacon, and harbor layers into one artwork."},
+      "symbolName": "light.beacon.max"
+    },
+    {
+      "id": "blueprint-outcome",
+      "title": {"zh-Hans": "从修复到制作", "en": "From Restoration to Making"},
+      "body": {"zh-Hans": "完成全部片段后，可使用同一调色板的 15×15 拼豆蓝图制作最终合成作品。", "en": "After every Fragment is complete, use the matching-palette 15×15 bead Blueprint to make the final synthetic artifact."},
+      "symbolName": "square.grid.3x3"
     }
   ],
   "tutorial": {
-    "puzzleID": "m1-g1-a01-f01-p01",
-    "title": {"zh-Hans": "第一次修复", "en": "First Restoration"},
-    "body": {"zh-Hans": "数字表示连续色块长度，字母符号帮助你在不依赖颜色时辨认它们。教学不会写入作品进度。", "en": "Numbers show run lengths; symbols identify colors without relying on color. The tutorial never writes Artwork progress."},
-    "skipLabel": {"zh-Hans": "暂时跳过", "en": "Skip for now"},
-    "completeLabel": {"zh-Hans": "完成教学", "en": "Finish tutorial"}
+    "puzzleID": "dev-restoration-f01-p01",
+    "title": {"zh-Hans": "5×5 教学参考：点亮信标", "en": "5×5 Tutorial Reference: Light the Beacon"},
+    "body": {"zh-Hans": "数字表示连续色块长度；N、G、C 符号分别标记暮色蓝、灯塔金与港湾红。不同颜色可相邻，同色线段之间必须留空。教学不会写入作品进度。", "en": "Numbers give run lengths; N, G, and C identify dusk navy, beacon gold, and harbor coral. Different colors may touch, while same-color runs require a gap. Tutorial play never writes Artwork progress."},
+    "skipLabel": {"zh-Hans": "跳过教学", "en": "Skip Tutorial"},
+    "completeLabel": {"zh-Hans": "完成教学参考", "en": "Complete Tutorial Reference"}
   },
   "routes": [
     {
       "route": "restoration",
-      "title": {"zh-Hans": "学徒修复师", "en": "Apprentice Restorer"},
-      "subtitle": {"zh-Hans": "从谜题与作品修复开始", "en": "Begin with puzzles and restoration"},
-      "body": {"zh-Hans": "进入修复室，逐块恢复作品并亲手获得蓝图。", "en": "Enter restoration, recover every Fragment, and earn its Blueprint."},
-      "actionLabel": {"zh-Hans": "进入修复室", "en": "Enter Restoration"}
+      "title": {"zh-Hans": "进入修复室", "en": "Enter Restoration"},
+      "subtitle": {"zh-Hans": "从 5×5 到 15×15 的三段修复", "en": "Three restorations from 5×5 to 15×15"},
+      "body": {"zh-Hans": "可按任意顺序完成三个片段；每次完成都会独立保存，全部完成后解锁最终蓝图。", "en": "Complete the three Fragments in any order. Each completion saves independently, and finishing all three unlocks the final Blueprint."},
+      "actionLabel": {"zh-Hans": "开始修复", "en": "Start Restoring"}
     },
     {
       "route": "workshop",
-      "title": {"zh-Hans": "专业画师", "en": "Professional Maker"},
-      "subtitle": {"zh-Hans": "从制作资料开始", "en": "Begin with production material"},
-      "body": {"zh-Hans": "先查看拼豆工坊；你仍可随时切换到修复室。", "en": "Open the bead workshop first; restoration remains available at any time."},
-      "actionLabel": {"zh-Hans": "进入拼豆工坊", "en": "Enter Workshop"}
+      "title": {"zh-Hans": "查看拼豆工坊", "en": "Open Bead Workshop"},
+      "subtitle": {"zh-Hans": "预览合成最终作品的材料规格", "en": "Preview materials for the synthetic final artifact"},
+      "body": {"zh-Hans": "查看 15×15 布局、三色材料数量与导出规格；修复室可随时进入。", "en": "Review the 15×15 layout, three-color material counts, and export specification; Restoration remains available at any time."},
+      "actionLabel": {"zh-Hans": "进入工坊", "en": "Enter Workshop"}
     }
   ],
   "museums": [
-    {"id": "dev-museum-cardinality", "title": {"zh-Hans": "余光博物馆", "en": "Afterglow Museum"}, "subtitle": {"zh-Hans": "文明修复署开发档案", "en": "Civilization Restoration development archive"}, "body": {"zh-Hans": "一座用于验证完整修复流程的合成馆藏。", "en": "A synthetic collection for validating the full restoration flow."}}
+    {
+      "id": "dev-museum-restoration-pack",
+      "title": {"zh-Hans": "合成开发博物馆（非正典）", "en": "Synthetic Development Museum (Non-Canon)"},
+      "subtitle": {"zh-Hans": "原创合成开发馆藏 · 商业使用已获许可", "en": "Original synthetic development collection · commercially cleared"},
+      "body": {"zh-Hans": "此博物馆仅用于开发验证，不代表真实机构、艺术家或历史馆藏。", "en": "This Museum exists only for development validation and represents no real institution, artist, or historical collection."}
+    }
   ],
   "galleries": [
-    {"id": "dev-gallery-cardinality", "title": {"zh-Hans": "静默展厅", "en": "Silent Gallery"}, "subtitle": {"zh-Hans": "第一章 · 留存的色层", "en": "Chapter One · Surviving Layers"}, "body": {"zh-Hans": "白蚀留下了图像，却切断了它们与意义之间的联系。", "en": "The Whitening left images behind while severing their meaning."}}
+    {
+      "id": "dev-gallery-restoration-pack",
+      "title": {"zh-Hans": "暮港信号展厅", "en": "Dusk Harbor Signal Gallery"},
+      "subtitle": {"zh-Hans": "开发章节 · dev-chapter-restoration-pack", "en": "Development chapter · dev-chapter-restoration-pack"},
+      "body": {"zh-Hans": "三段由左至右的修复区域共同组成灯塔与港湾信号。", "en": "Three left-to-right restoration regions jointly form a lighthouse and harbor signal."}
+    }
   ],
   "artworks": [
-    {"id": "dev-artwork-cardinality-1", "title": {"zh-Hans": "档案中的晨光", "en": "Morning Light in the Archive"}, "subtitle": {"zh-Hans": "开发作品 · 双阶段修复样本", "en": "Development artwork · staged restoration sample"}, "body": {"zh-Hans": "画面边缘仍保存着颜料，中央记忆层需要重新连接。", "en": "Pigment survives at the edge; the central memory layer must be reconnected."}, "completionTitle": {"zh-Hans": "晨光重新有了意义", "en": "Morning Light Has Meaning Again"}, "completionBody": {"zh-Hans": "整幅作品已恢复，制作蓝图与亲手修复印章现已可用。", "en": "The complete artwork is restored; its Blueprint and restorer seal are now available."}}
+    {
+      "id": "dev-artwork-restoration-pack",
+      "title": {"zh-Hans": "暮色港湾信号（合成开发作品，非正典）", "en": "Dusk Harbor Signal (Synthetic Development Artwork, Non-Canon)"},
+      "subtitle": {"zh-Hans": "原创合成开发资产 · 无真实艺术家声明", "en": "Original synthetic development asset · no real artist claim"},
+      "body": {"zh-Hans": "左、中、右三个互不重叠的区域完整划分画面，并以同一三色调色板逐步呈现灯塔轮廓。", "en": "Distinct left, center, and right regions fully partition the image and progressively reveal a lighthouse silhouette in one three-color palette."},
+      "completionTitle": {"zh-Hans": "暮港信号已完整恢复", "en": "Dusk Harbor Signal Fully Restored"},
+      "completionBody": {"zh-Hans": "三个片段均已归档；15×15 合成最终作品蓝图与材料清单现已解锁。", "en": "All three Fragments are archived; the 15×15 synthetic final-artifact Blueprint and material list are now unlocked."}
+    }
   ],
   "fragments": [
-    {"id": "m1-g1-a01-f01", "title": {"zh-Hans": "中央色层", "en": "Central Color Layer"}, "subtitle": {"zh-Hans": "5×5 彩色 Nonogram", "en": "5×5 colored Nonogram"}, "body": {"zh-Hans": "恢复围绕空白核心的蓝色与金色颜料。", "en": "Restore blue and gold pigment surrounding the empty center."}, "completionTitle": {"zh-Hans": "中央色层已稳定", "en": "Central Layer Stabilized"}, "completionBody": {"zh-Hans": "第一处受损区域已写入修复档案；作品仍有一处裂隙。", "en": "The first region is recorded; one fracture remains."}},
-    {"id": "dev-a1-f02", "title": {"zh-Hans": "边缘锚点", "en": "Edge Anchor"}, "subtitle": {"zh-Hans": "1×1 关系验证谜题", "en": "1×1 relationship fixture"}, "body": {"zh-Hans": "重新固定作品边缘最后一枚蓝色锚点。", "en": "Reattach the final blue anchor at the artwork edge."}, "completionTitle": {"zh-Hans": "边缘锚点已恢复", "en": "Edge Anchor Restored"}, "completionBody": {"zh-Hans": "最后一个修复片段已归档。", "en": "The final repair Fragment is archived."}}
+    {
+      "id": "dev-restoration-f01",
+      "title": {"zh-Hans": "左侧区域：初见信标", "en": "Left Region: First Beacon"},
+      "subtitle": {"zh-Hans": "5×5 彩色 Nonogram · 教学参考", "en": "5×5 colored Nonogram · tutorial reference"},
+      "body": {"zh-Hans": "用三种颜色勾勒灯塔、灯光与港湾基线。", "en": "Outline the lighthouse, its light, and the harbor baseline in three colors."},
+      "completionTitle": {"zh-Hans": "左侧区域已稳定", "en": "Left Region Stabilized"},
+      "completionBody": {"zh-Hans": "此区域已独立归档；无论它在三个片段中第几个完成，整体进度都会正确更新。", "en": "This region is archived independently; overall progress updates correctly regardless of when it is completed among the three Fragments."}
+    },
+    {
+      "id": "dev-restoration-f02",
+      "title": {"zh-Hans": "中央区域：港灯成形", "en": "Center Region: Harbor Light Forms"},
+      "subtitle": {"zh-Hans": "10×10 彩色 Nonogram", "en": "10×10 colored Nonogram"},
+      "body": {"zh-Hans": "扩展塔身、信标与港湾反光，形成清晰的中型信号图。", "en": "Extend the tower, beacon, and harbor reflection into a clear medium signal image."},
+      "completionTitle": {"zh-Hans": "中央区域已稳定", "en": "Center Region Stabilized"},
+      "completionBody": {"zh-Hans": "此区域已独立归档；完成顺序不会改变文案、保存结果或其余片段状态。", "en": "This region is archived independently; completion order does not change its copy, saved result, or the state of other Fragments."}
+    },
+    {
+      "id": "dev-restoration-f03",
+      "title": {"zh-Hans": "右侧区域：暮港全景", "en": "Right Region: Dusk Harbor Vista"},
+      "subtitle": {"zh-Hans": "15×15 彩色 Nonogram", "en": "15×15 colored Nonogram"},
+      "body": {"zh-Hans": "完成具有塔身、金色信标与珊瑚色港面的最终高分辨率图案。", "en": "Complete the final high-resolution pattern with tower, golden beacon, and coral harbor surface."},
+      "completionTitle": {"zh-Hans": "右侧区域已稳定", "en": "Right Region Stabilized"},
+      "completionBody": {"zh-Hans": "此区域已独立归档；系统按已完成片段总数计算进度，不假定它是最后完成。", "en": "This region is archived independently; progress uses the completed-Fragment count and never assumes this one finishes last."}
+    }
   ]
 }

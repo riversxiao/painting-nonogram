@@ -30,6 +30,30 @@ public struct ArtworkProductState: Equatable, Sendable {
     public let access: ArtworkAccessState
 }
 
+public enum FragmentRestorationStatus: Equatable, Sendable {
+    case notStarted
+    case inProgress(updatedAt: Date)
+    case completed(completedAt: Date)
+
+    public var isCompleted: Bool {
+        if case .completed = self { return true }
+        return false
+    }
+}
+
+public struct FragmentRestorationState: Equatable, Sendable {
+    public let fragmentID: String
+    public let currentKey: ProgressRecordKey
+    public let status: FragmentRestorationStatus
+}
+
+/// UI-facing progress projection derived from one coherent exact-current record snapshot.
+/// Opening a session alone is intentionally not considered progress.
+public struct ArtworkRestorationSnapshot: Equatable, Sendable {
+    public let artworkState: ArtworkProductState
+    public let fragments: [FragmentRestorationState]
+}
+
 public struct AuthorizedBlueprint: Equatable, Sendable {
     public let blueprint: BlueprintDefinition
     public let exportPlan: BlueprintExportPlan
