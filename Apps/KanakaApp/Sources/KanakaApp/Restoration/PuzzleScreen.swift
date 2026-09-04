@@ -29,13 +29,14 @@ struct PuzzleScreen: View {
     var body: some View {
         Group {
             if let session = model.session {
-                ScrollView([.horizontal, .vertical]) {
+                ScrollView(.vertical) {
                     VStack(spacing: 16) {
                         PuzzleStatusView(session: session)
                         NonogramBoardView(
                             puzzle: model.puzzle,
                             session: session,
-                            edit: { coordinate in Task { await model.edit(coordinate) } }
+                            targetState: model.selectedCellState,
+                            edit: { edits in Task { await model.edit(edits) } }
                         )
                         .disabled(model.isReadOnly || model.isClosing)
                         ToolPalette(model: model, session: session)
