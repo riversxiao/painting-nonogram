@@ -29,6 +29,10 @@ enum KanakaContentCommand {
                 try validateSession(
                     puzzleURL: URL(fileURLWithPath: arguments[1])
                 )
+            case "validate-board-input":
+                try validateBoardInput(
+                    puzzleURL: URL(fileURLWithPath: arguments[1])
+                )
             case "validate-progress":
                 try await validateProgress(
                     puzzleURL: URL(fileURLWithPath: arguments[1])
@@ -646,6 +650,7 @@ enum CommandError: Error, CustomStringConvertible {
     case invalidDirectory(String)
     case noPuzzleDefinitions(String)
     case sessionValidationFailed(String)
+    case boardInputValidationFailed(String)
     case progressValidationFailed(String)
     case accessValidationFailed(String)
     case productValidationFailed(String)
@@ -654,13 +659,15 @@ enum CommandError: Error, CustomStringConvertible {
     var description: String {
         switch self {
         case .usage:
-            return "Usage:\n  kanaka-content validate-puzzle <puzzle-definition.json>\n  kanaka-content validate-puzzles <directory>\n  kanaka-content validate-content <directory>\n  kanaka-content validate-session <puzzle-definition.json>\n  kanaka-content validate-progress <puzzle-definition.json>\n  kanaka-content validate-access <artwork.json>\n  kanaka-content validate-product-flow <content-directory>\n  kanaka-content validate-playable-experience <content-directory>"
+            return "Usage:\n  kanaka-content validate-puzzle <puzzle-definition.json>\n  kanaka-content validate-puzzles <directory>\n  kanaka-content validate-content <directory>\n  kanaka-content validate-session <puzzle-definition.json>\n  kanaka-content validate-board-input <puzzle-definition.json>\n  kanaka-content validate-progress <puzzle-definition.json>\n  kanaka-content validate-access <artwork.json>\n  kanaka-content validate-product-flow <content-directory>\n  kanaka-content validate-playable-experience <content-directory>"
         case .invalidDirectory(let path):
             return "Not a readable directory: \(path)"
         case .noPuzzleDefinitions(let path):
             return "No puzzle-definition.json files found under: \(path)"
         case .sessionValidationFailed(let reason):
             return "GameSession validation failed: \(reason)"
+        case .boardInputValidationFailed(let reason):
+            return "Board input validation failed: \(reason)"
         case .progressValidationFailed(let reason):
             return "Progress validation failed: \(reason)"
         case .accessValidationFailed(let reason):

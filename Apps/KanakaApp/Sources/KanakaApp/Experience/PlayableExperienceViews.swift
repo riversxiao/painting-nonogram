@@ -93,18 +93,25 @@ private final class TutorialSessionModel: ObservableObject {
         selectedTool = puzzle.palette.first.map { .fill($0.colorId) } ?? .exclude
     }
 
-    func edit(_ coordinate: CellCoordinate) {
-        let state: CellState
+    var selectedCellState: CellState {
         switch selectedTool {
-        case .fill(let colorID): state = .filled(colorId: colorID)
-        case .exclude: state = .excluded
-        case .erase: state = .unknown
+        case .fill(let colorID): return .filled(colorId: colorID)
+        case .exclude: return .excluded
+        case .erase: return .unknown
         }
+    }
+
+    func edit(_ edits: [CellEdit]) {
+        guard !edits.isEmpty else { return }
         do {
-            _ = try session.applyBatch([CellEdit(coordinate: coordinate, state: state)])
+            _ = try session.applyBatch(edits)
         } catch {
             errorMessage = String(describing: error)
         }
+    }
+
+    func edit(_ coordinate: CellCoordinate) {
+        edit([CellEdit(coordinate: coordinate, state: selectedCellState)])
     }
 
     func undo() { _ = session.undo() }
@@ -130,7 +137,7 @@ private struct TutorialExperienceView: View {
 
     var body: some View {
         let presentation = services.catalog.experience.tutorial
-        ScrollView([.horizontal, .vertical]) {
+        ScrollView(.vertical) {
             VStack(spacing: 18) {
                 Text(localized(presentation.title))
                     .font(.largeTitle.bold())
@@ -144,6 +151,7 @@ private struct TutorialExperienceView: View {
                 NonogramBoardView(
                     puzzle: puzzle,
                     session: model.session,
+                    targetState: model.selectedCellState,
                     edit: model.edit
                 )
                 tutorialTools

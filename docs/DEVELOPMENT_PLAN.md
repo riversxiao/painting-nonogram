@@ -549,10 +549,10 @@ Release 使用不可变 tag，记录 App 版本、Museum 内容版本和 commit�
 
 ### M2：技术原型（3–4 周，可部分并行）
 
-当前 Apple composition 代码已具备 Bundle catalog、Museum → Gallery → Artwork → Fragment 导航、可操作 `5×5` reference board、mutation autosave、Undo/Redo、completion、SwiftData Progress/Story stores、StoreKit 外部映射、授权后 Blueprint PNG/材料导出、Share Sheet 与 scene flush。Bundle 仍使用 synthetic development fixture，且 Linux 只能编译 sentinel。以下 Apple 工作仍需 Xcode/真机完成：
+当前 Apple composition 代码已具备 Bundle catalog、Museum → Gallery → Artwork → Fragment 导航、平台无关 `BoardGeometry` / `BoardInputSession`、单 Canvas 棋盘 adapter、批量拖画、缩放/平移模式、mutation autosave、Undo/Redo、completion、SwiftData Progress/Story stores、StoreKit 外部映射、授权后 Blueprint PNG/材料导出、Share Sheet 与 scene flush。纯 Swift 坐标/输入事务已有 Linux gate；Bundle 仍使用 synthetic development fixture，且 Linux 只能编译 App sentinel。以下 Apple 工作仍需 Xcode/真机完成：
 
 - 建立签名 iOS/iPadOS App host target，编译并修复全部 SwiftUI/SwiftData/StoreKit/Core Graphics 条件分支。
-- 将 reference Grid 棋盘升级/验证为适合 `20×20/25×25` 的 Canvas 或虚拟化渲染，补齐拖拽事务、缩放/平移与 60 fps 门。
+- 在 Apple SDK/真机编译并验证适合 `20×20/25×25` 的 Canvas adapter、连续拖拽 transaction、pinch 与平移事件冲突、逻辑光标 accessibility actions 和 60 fps 门；Linux gate 只证明对应的纯 Swift geometry/input 契约。
 - 用 SwiftData reopen/migration、StoreKit Configuration、PNG golden pixel、Share Sheet、scene suspension 和 accessibility UI tests 验证 adapters。
 
 通过：iPhone/iPad 真机稳定游玩并恢复进度。

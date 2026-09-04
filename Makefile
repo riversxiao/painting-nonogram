@@ -1,4 +1,4 @@
-.PHONY: build validate-fixture validate-session validate-progress validate-access validate-product validate-experience validate-app
+.PHONY: build validate-fixture validate-session validate-board-input validate-progress validate-access validate-product validate-experience validate-app
 
 build:
 	swift build --package-path Packages/KanakaCore
@@ -14,6 +14,9 @@ validate-fixture:
 
 validate-session:
 	swift run --package-path Tools/kanaka-content kanaka-content validate-session Content/Fixtures/m1-g1-a01-f01/puzzle-definition.json
+
+validate-board-input:
+	swift run --package-path Tools/kanaka-content kanaka-content validate-board-input Content/Fixtures/m1-g1-a01-f01/puzzle-definition.json
 
 validate-progress:
 	swift run --package-path Tools/kanaka-content kanaka-content validate-progress Content/Fixtures/m1-g1-a01-f01/puzzle-definition.json

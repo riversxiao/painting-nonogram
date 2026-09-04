@@ -59,23 +59,29 @@ final class PuzzleViewModel: ObservableObject {
         }
     }
 
-    func edit(_ coordinate: CellCoordinate) async {
-        guard !isClosing, !isReadOnly else { return }
+    var selectedCellState: CellState {
+        switch selectedTool {
+        case .fill(let colorID): return .filled(colorId: colorID)
+        case .exclude: return .excluded
+        case .erase: return .unknown
+        }
+    }
+
+    func edit(_ edits: [CellEdit]) async {
+        guard !edits.isEmpty, !isClosing, !isReadOnly else { return }
         await serialize { [weak self] in
             guard let self, let controller = self.controller else { return }
-            let state: CellState
-            switch self.selectedTool {
-            case .fill(let colorID): state = .filled(colorId: colorID)
-            case .exclude: state = .excluded
-            case .erase: state = .unknown
-            }
             do {
-                _ = try await controller.apply([CellEdit(coordinate: coordinate, state: state)])
+                _ = try await controller.apply(edits)
                 self.session = await controller.currentSession()
             } catch {
                 self.errorMessage = String(describing: error)
             }
         }
+    }
+
+    func edit(_ coordinate: CellCoordinate) async {
+        await edit([CellEdit(coordinate: coordinate, state: selectedCellState)])
     }
 
     func undo() async {
