@@ -1,4 +1,4 @@
-.PHONY: build validate-fixture validate-session validate-board-input validate-progress validate-access validate-product validate-experience validate-app
+.PHONY: build validate-fixture validate-session validate-board-input validate-progress validate-access validate-product validate-experience validate-restoration-pack validate-app
 
 build:
 	swift build --package-path Packages/KanakaCore
@@ -30,7 +30,11 @@ validate-product:
 validate-experience:
 	swift run --package-path Tools/kanaka-content kanaka-content validate-playable-experience Content/Fixtures
 
+validate-restoration-pack:
+	swift run --package-path Tools/kanaka-content kanaka-content validate-restoration-pack Apps/KanakaApp/Sources/KanakaApp/Resources/Content
+
 validate-app:
 	swift run --package-path Tools/kanaka-content kanaka-content validate-content Apps/KanakaApp/Sources/KanakaApp/Resources/Content
 	swift run --package-path Tools/kanaka-content kanaka-content validate-playable-experience Apps/KanakaApp/Sources/KanakaApp/Resources/Content
+	swift run --package-path Tools/kanaka-content kanaka-content validate-restoration-pack Apps/KanakaApp/Sources/KanakaApp/Resources/Content
 	swift run --package-path Apps/KanakaApp KanakaApp

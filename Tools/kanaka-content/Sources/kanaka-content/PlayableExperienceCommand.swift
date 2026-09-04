@@ -109,10 +109,15 @@ func validatePlayableExperience(directoryURL: URL) async throws {
     }
 
     guard let multiFragmentArtwork = catalog.artworks.values
-        .filter({ $0.repairFragmentIDs.count == 2 })
-        .sorted(by: { $0.id < $1.id })
+        .filter({ $0.repairFragmentIDs.count >= 2 })
+        .sorted(by: { lhs, rhs in
+            if lhs.repairFragmentIDs.count != rhs.repairFragmentIDs.count {
+                return lhs.repairFragmentIDs.count < rhs.repairFragmentIDs.count
+            }
+            return lhs.id < rhs.id
+        })
         .first else {
-        throw CommandError.experienceValidationFailed("no two-Fragment development Artwork found")
+        throw CommandError.experienceValidationFailed("no multi-Fragment development Artwork found")
     }
 
     var feedback: [CompletionFeedback] = []
@@ -125,15 +130,20 @@ func validatePlayableExperience(directoryURL: URL) async throws {
         feedback.append(CompletionFeedback(outcome: try await productFlow.complete(controller)))
     }
 
-    guard feedback.count == 2,
-          feedback[0].completedCount == 1,
-          feedback[0].totalCount == 2,
-          !feedback[0].isArtworkRestored,
-          !feedback[0].restorerSealAwarded,
-          feedback[1].completedCount == 2,
-          feedback[1].isArtworkRestored,
-          feedback[1].blueprintAvailable,
-          feedback[1].restorerSealAwarded,
+    let expectedCount = multiFragmentArtwork.repairFragmentIDs.count
+    let intermediate = feedback.dropLast()
+    guard feedback.count == expectedCount,
+          feedback.enumerated().allSatisfy({ index, item in
+              item.completedCount == index + 1 && item.totalCount == expectedCount
+          }),
+          intermediate.allSatisfy({
+              !$0.isArtworkRestored && !$0.blueprintAvailable && !$0.restorerSealAwarded
+          }),
+          let final = feedback.last,
+          final.completedCount == expectedCount,
+          final.isArtworkRestored,
+          final.blueprintAvailable,
+          final.restorerSealAwarded,
           feedback.allSatisfy({ $0.newlyAcceptedEvidenceIDs.isEmpty }),
           try await productFlow.storyState().acceptedEvidence.isEmpty else {
         throw CommandError.experienceValidationFailed(
@@ -147,7 +157,7 @@ func validatePlayableExperience(directoryURL: URL) async throws {
         "  onboarding: intro → completed/skipped tutorial → either initial route",
         "  tutorial: isolated 5×5 GameSession; no Progress or Story mutation",
         "  state persistence: versioned round trip; contradictory payload rejected",
-        "  two-Fragment Artwork: intermediate 1/2 → final 2/2 feedback",
+        "  multi-Fragment Artwork: intermediate 1/\(expectedCount) → final \(expectedCount)/\(expectedCount) feedback",
         "  final unlocks: Artwork + Blueprint + restorer seal",
         "  development Story mapping: intentionally empty",
     ].joined(separator: "\n"))

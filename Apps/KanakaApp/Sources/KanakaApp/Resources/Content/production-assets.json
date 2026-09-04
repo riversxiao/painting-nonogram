@@ -1,5 +1,5 @@
 {
   "schema": "production-assets-v1",
-  "activeBeadAssets": [{"assetId": "dev-bead-cardinality-1", "revision": 1, "contentHash": "sha256:c74b7e1919a53daa3c78a0eacc7fcd932892d432618e671b8efa8bfd699fc07c"}],
-  "activeBlueprints": [{"blueprintId": "dev-blueprint-cardinality-1", "revision": 1, "blueprintHash": "sha256:f1f51a6ea5c0172b53b6d828b31eb55f251ac2f95eb8aeb2b1184dca3d2ff5fb"}]
+  "activeBeadAssets": [{"assetId": "dev-bead-restoration-pack", "revision": 1, "contentHash": "sha256:685d6d83bbefd6f4ec5fb3e33f18d9c0465ae8b141c380c1f3722b03ad6c0e83"}],
+  "activeBlueprints": [{"blueprintId": "dev-blueprint-restoration-pack", "revision": 1, "blueprintHash": "sha256:a23f5ecc843911b85ab8dcb483c76b557f3c23d335463a5724169277058e8eb7"}]
 }

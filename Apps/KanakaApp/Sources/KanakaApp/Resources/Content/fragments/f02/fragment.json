@@ -1,8 +1,8 @@
 {
   "schema": "repair-fragment-v1",
-  "id": "dev-a1-f02",
+  "id": "dev-restoration-f02",
   "revision": 1,
-  "artworkID": "dev-artwork-cardinality-1",
-  "region": {"x": 0.65, "y": 0.65, "width": 0.20, "height": 0.20},
-  "puzzleDefinitionID": "dev-a1-f02-p01"
+  "artworkID": "dev-artwork-restoration-pack",
+  "region": {"x": 0.34, "y": 0.0, "width": 0.33, "height": 1.0},
+  "puzzleDefinitionID": "dev-restoration-f02-p01"
 }

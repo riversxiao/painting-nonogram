@@ -1,0 +1,8 @@
+{
+  "schema": "repair-fragment-v1",
+  "id": "dev-restoration-f03",
+  "revision": 1,
+  "artworkID": "dev-artwork-restoration-pack",
+  "region": {"x": 0.67, "y": 0.0, "width": 0.33, "height": 1.0},
+  "puzzleDefinitionID": "dev-restoration-f03-p01"
+}

@@ -28,6 +28,42 @@ public struct ArtworkStateService: Sendable {
         )
     }
 
+    public func restorationSnapshot(
+        artworkID: String,
+        entitlements: MuseumEntitlementSnapshot
+    ) async throws -> ArtworkRestorationSnapshot {
+        let keys = try currentKeys(artworkID: artworkID)
+        let records = try await progressStore.records(for: Set(keys))
+        let completedAtByKey = Dictionary(uniqueKeysWithValues: records.compactMap { key, record in
+            record.completedAt.map { (key, $0) }
+        })
+        let artworkState = try makeState(
+            artworkID: artworkID,
+            keys: keys,
+            completedAtByKey: completedAtByKey,
+            entitlements: entitlements
+        )
+        let fragments = keys.map { key in
+            let status: FragmentRestorationStatus
+            if let completedAt = records[key]?.completedAt {
+                status = .completed(completedAt: completedAt)
+            } else if let updatedAt = records[key]?.updatedAt {
+                status = .inProgress(updatedAt: updatedAt)
+            } else {
+                status = .notStarted
+            }
+            return FragmentRestorationState(
+                fragmentID: key.fragmentID,
+                currentKey: key,
+                status: status
+            )
+        }
+        return ArtworkRestorationSnapshot(
+            artworkState: artworkState,
+            fragments: fragments
+        )
+    }
+
     /// Derives the post-completion state from the exact snapshot returned by the store,
     /// avoiding a second read that could observe concurrent sibling completion.
     func state(

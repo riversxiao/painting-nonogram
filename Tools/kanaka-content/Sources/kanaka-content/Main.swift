@@ -49,6 +49,10 @@ enum KanakaContentCommand {
                 try await validatePlayableExperience(
                     directoryURL: URL(fileURLWithPath: arguments[1])
                 )
+            case "validate-restoration-pack":
+                try await validateRestorationPack(
+                    directoryURL: URL(fileURLWithPath: arguments[1])
+                )
             default:
                 throw CommandError.usage
             }
@@ -655,11 +659,12 @@ enum CommandError: Error, CustomStringConvertible {
     case accessValidationFailed(String)
     case productValidationFailed(String)
     case experienceValidationFailed(String)
+    case restorationPackValidationFailed(String)
 
     var description: String {
         switch self {
         case .usage:
-            return "Usage:\n  kanaka-content validate-puzzle <puzzle-definition.json>\n  kanaka-content validate-puzzles <directory>\n  kanaka-content validate-content <directory>\n  kanaka-content validate-session <puzzle-definition.json>\n  kanaka-content validate-board-input <puzzle-definition.json>\n  kanaka-content validate-progress <puzzle-definition.json>\n  kanaka-content validate-access <artwork.json>\n  kanaka-content validate-product-flow <content-directory>\n  kanaka-content validate-playable-experience <content-directory>"
+            return "Usage:\n  kanaka-content validate-puzzle <puzzle-definition.json>\n  kanaka-content validate-puzzles <directory>\n  kanaka-content validate-content <directory>\n  kanaka-content validate-session <puzzle-definition.json>\n  kanaka-content validate-board-input <puzzle-definition.json>\n  kanaka-content validate-progress <puzzle-definition.json>\n  kanaka-content validate-access <artwork.json>\n  kanaka-content validate-product-flow <content-directory>\n  kanaka-content validate-playable-experience <content-directory>\n  kanaka-content validate-restoration-pack <content-directory>"
         case .invalidDirectory(let path):
             return "Not a readable directory: \(path)"
         case .noPuzzleDefinitions(let path):
@@ -676,6 +681,8 @@ enum CommandError: Error, CustomStringConvertible {
             return "Product flow validation failed: \(reason)"
         case .experienceValidationFailed(let reason):
             return "Playable experience validation failed: \(reason)"
+        case .restorationPackValidationFailed(let reason):
+            return "Restoration pack validation failed: \(reason)"
         }
     }
 }
