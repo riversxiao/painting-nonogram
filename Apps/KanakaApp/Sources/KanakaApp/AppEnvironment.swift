@@ -10,11 +10,13 @@ import SwiftUI
 final class KanakaAppModel: ObservableObject {
     @Published private(set) var services: KanakaAppServices?
     @Published private(set) var entitlementSnapshot = MuseumEntitlementSnapshot()
+    @Published private(set) var experienceState = PlayableExperienceState()
     @Published private(set) var startupError: String?
     @Published var presentedError: String?
 
     private var isLoading = false
     private var entitlementUpdatesTask: Task<Void, Never>?
+    private let experienceStore = UserDefaultsPlayableExperienceStateStore()
 
     deinit {
         entitlementUpdatesTask?.cancel()
@@ -39,6 +41,9 @@ final class KanakaAppModel: ObservableObject {
             }
 
             let catalog = try RuntimeContentCatalog.loadValidated(directoryURL: contentURL)
+            let loadedExperienceState = try await experienceStore.load()
+                ?? PlayableExperienceState()
+            _ = try PlayableExperienceFlow(state: loadedExperienceState)
             let progressStore = try SwiftDataProgressStore()
             let storyStore = try SwiftDataStoryStateStore()
             let storyRules = try Museum1StoryRules.make()
@@ -69,6 +74,7 @@ final class KanakaAppModel: ObservableObject {
             let initialEntitlements = await entitlementStore.refresh()
             _ = try await flow.reconcileStory()
             entitlementSnapshot = initialEntitlements
+            experienceState = loadedExperienceState
             services = value
             entitlementUpdatesTask = Task { @MainActor [weak self] in
                 for await updatedSnapshot in updates {
@@ -78,6 +84,39 @@ final class KanakaAppModel: ObservableObject {
             }
         } catch {
             startupError = String(describing: error)
+        }
+    }
+
+    func acknowledgeWorldIntro() async {
+        await updateExperience { try $0.acknowledgeWorldIntro() }
+    }
+
+    func completeTutorial() async {
+        await updateExperience { try $0.completeTutorial() }
+    }
+
+    func skipTutorial() async {
+        await updateExperience { try $0.skipTutorial() }
+    }
+
+    func chooseInitialRoute(_ route: PlayableExperienceRoute) async {
+        await updateExperience { try $0.chooseInitialRoute(route) }
+    }
+
+    func resetPlayableExperience() async {
+        await updateExperience { $0.reset() }
+    }
+
+    private func updateExperience(
+        _ update: (inout PlayableExperienceFlow) throws -> Void
+    ) async {
+        do {
+            var flow = try PlayableExperienceFlow(state: experienceState)
+            try update(&flow)
+            try await experienceStore.save(flow.state)
+            experienceState = flow.state
+        } catch {
+            presentedError = "无法保存体验进度：\(error)"
         }
     }
 

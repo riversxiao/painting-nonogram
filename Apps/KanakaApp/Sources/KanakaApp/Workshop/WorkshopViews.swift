@@ -9,12 +9,23 @@ struct WorkshopHomeView: View {
     var body: some View {
         List(services.catalog.museums.keys.sorted(), id: \.self) { museumID in
             if let museum = services.catalog.museums[museumID] {
-                Section(displayName(museum.id)) {
+                Section(experienceTitle(
+                    services.catalog.experience.museum(museum.id),
+                    fallbackID: museum.id,
+                    catalog: services.catalog
+                )) {
                     ForEach(artworkIDs(in: museum), id: \.self) { artworkID in
                         NavigationLink {
                             BlueprintDetailView(services: services, artworkID: artworkID)
                         } label: {
-                            Label(displayName(artworkID), systemImage: "square.grid.3x3")
+                            Label(
+                                experienceTitle(
+                                    services.catalog.experience.artwork(artworkID),
+                                    fallbackID: artworkID,
+                                    catalog: services.catalog
+                                ),
+                                systemImage: "square.grid.3x3"
+                            )
                         }
                     }
                 }
@@ -82,7 +93,11 @@ private struct BlueprintDetailView: View {
                 ProgressView("正在验证使用权限…")
             }
         }
-        .navigationTitle(displayName(artworkID))
+        .navigationTitle(experienceTitle(
+            services.catalog.experience.artwork(artworkID),
+            fallbackID: artworkID,
+            catalog: services.catalog
+        ))
         .task { await open() }
 #if canImport(UIKit)
         .sheet(isPresented: $showShare, onDismiss: cleanup) {
