@@ -110,7 +110,7 @@ Museum 1 英雄画作《潮汐城的归桥》固定为 `3` 个 Repair Fragments�
 
 ## 当前可运行开发基线
 
-M0/M1 规则与内容层、M2 进度层，以及平台无关的产品领域闭环已经建立；`Apps/KanakaApp` 提供 iOS/iPadOS SwiftUI composition root 骨架，Apple framework 实现仍需在 Xcode 环境接入和验证。使用 Swift 6.x：
+M0/M1 规则与内容层、M2 进度层、平台无关产品领域闭环，以及 Apple composition 代码已经建立。`Apps/KanakaApp` 包含开发 catalog 驱动的修复室/工坊 reference flow；Apple 条件分支仍需 Xcode 验证。使用 Swift 6.x：
 
 ```bash
 make build
@@ -119,6 +119,7 @@ make validate-session
 make validate-progress
 make validate-access
 make validate-product
+make validate-app
 ```
 
 `make validate-fixture` 会递归加载 `Content/Fixtures/`，校验 `Museum → Gallery → Artwork → 1–4 RepairFragments → PuzzleDefinition` 的 schema、ID、归属、引用与归一化区域，并逐题执行 clue、semantic hash、唯一精确彩色解和版本化纯逻辑验证；任一文件失败时返回非零。当前 fixture 覆盖全部 `1 / 2 / 3 / 4` Fragment cardinality。需要查看逐题 deduction steps 时，可运行：
@@ -133,6 +134,8 @@ swift run --package-path Tools/kanaka-content kanaka-content validate-puzzles Co
 
 `make validate-access` 验证 Artwork 的单一访问派生边界：全部当前 Fragment 完成才产生修复状态与印章；匹配的 Museum 蓝图库权益只能授予 Blueprint 使用权，不能修改修复、印章或其他 Museum。受保护的 bead/Blueprint payload 与 export-plan 构造只通过 ProductDomain SPI 提供给 `BlueprintUseService`，普通 App API 必须先经过授权。该 evaluator 不读取或写入 Story、StoreKit、SwiftData，也不决定 legacy revision 政策。
 
-`make validate-product` 运行整体产品闭环：加载并交叉校验 Museum/Gallery/Artwork/Fragment/Puzzle/BeadPattern/Blueprint catalog，以原始 JSON 删除顶层 hash 字段后执行 RFC 8785 JCS + SHA-256（含 ECMAScript number 与 duplicate-member vectors），并拒绝 hash 漂移、越界 RGB、board/grid 不一致和重复材料。`production-assets-v1` manifest 以 `(assetId, revision, hash)` / `(blueprintId, revision, hash)` 显式选择 active revision；CLI 同时装入两代资产并验证升级与回滚都只由 manifest 决定。场景以真实 Fragment ID 打开，变更时自动调度保存，flush 后重启恢复并乱序完成两题；验证原子 `0/2 → 1/2 → 2/2`、earned/entitled Blueprint、材料与 PNG 语义导出计划、entitlement 隔离、映射 capability 校验、并发 Story 原子提交，以及 catalog-wide canonical reconciliation 自动收敛。Museum 1 另验证 `28` 个有序 Canon evidence → `7` 个单调 milestones。
+`make validate-product` 运行整体产品闭环：加载并交叉校验 Museum/Gallery/Artwork/Fragment/Puzzle/BeadPattern/Blueprint catalog，以原始 JSON 删除顶层 hash 字段后执行 RFC 8785 JCS + SHA-256（含 ECMAScript number 与 duplicate-member vectors），并拒绝 hash 漂移、越界 RGB、board/grid 不一致、重复材料、多字素辅助符号和低于 8 px/cell 的 Blueprint 导出。`production-assets-v1` manifest 以 `(assetId, revision, hash)` / `(blueprintId, revision, hash)` 显式选择 active revision；CLI 同时装入两代资产并验证升级与回滚都只由 manifest 决定。场景以真实 Fragment ID 打开，变更时自动调度保存，flush 后重启恢复并乱序完成两题；验证原子 `0/2 → 1/2 → 2/2`、完成快照对 live/pre-completion/reopened controllers 均不可变、earned/entitled Blueprint、材料与 PNG 语义导出计划、entitlement 隔离、映射 capability 校验、并发 Story 原子提交，以及 catalog-wide canonical reconciliation 自动收敛。Museum 1 另验证 `28` 个有序 Canon evidence → `7` 个单调 milestones。
 
-当前 Apple 边界可通过 `swift build --package-path Apps/KanakaApp` 在 Linux 编译 fallback sentinel；真正的 SwiftUI、SwiftData、StoreKit 2、Core Graphics/ImageIO、Share Sheet、scene-phase flush 与真机性能尚未验证，只能由 Xcode/iOS 17 或 macOS 14 SDK gate 完成。
+`make validate-app` 校验 App Bundle 中的独立单 Artwork 开发 catalog，并构建/运行 Linux sentinel。Apple 分支现已实现真实 composition：Museum → Gallery → Artwork → Fragment → `5×5` 彩色棋盘、mutation autosave、Undo/Redo、completion receipt、Workshop 授权、材料/PNG 导出、StoreKit 外部商品映射、SwiftData Story 原子 Store 与 scene-phase session flush。Bundle 内容仍是 synthetic development fixture，不是 Museum 1 正式内容。
+
+当前 Linux gate 只能证明 App 资源契约、依赖方向与 fallback sentinel；它不会编译 `canImport(SwiftUI/SwiftData/StoreKit/CoreGraphics)` 内的实现。真正的 SwiftUI 布局与手势、SwiftData transaction visibility、StoreKit Configuration、PNG 像素结果、Share Sheet、scene suspension、VoiceOver 和真机性能仍必须由 Xcode/iOS 17 或 macOS 14 SDK gate 验证。当前 Swift Package 也仍需由实际签名的 iOS App host target 集成后才能安装到设备。

@@ -78,7 +78,7 @@ public enum ProductionContentValidator {
               blueprint.revision > 0,
               !blueprint.exportRules.version.isEmpty,
               !blueprint.exportRules.filenameVersion.isEmpty,
-              blueprint.exportRules.pixelsPerCell > 0 else {
+              blueprint.exportRules.pixelsPerCell >= 8 else {
             throw ProductionContentValidationError.invalidField("blueprint header or export rules")
         }
         try validate(grid: blueprint.grid, palette: blueprint.palette, physical: blueprint.physical)
@@ -155,7 +155,7 @@ public enum ProductionContentValidator {
               palette.allSatisfy({ color in
                   !color.name.isEmpty
                       && color.name.values.allSatisfy({ !$0.isEmpty })
-                      && !color.accessibilitySymbol.isEmpty
+                      && color.accessibilitySymbol.count == 1
                       && !color.brand.name.isEmpty
                       && !color.brand.code.isEmpty
                       && !color.brand.swatchVersion.isEmpty
@@ -164,7 +164,7 @@ public enum ProductionContentValidator {
                       && (0...255).contains(color.sRGB8.b)
               }) else {
             throw ProductionContentValidationError.invalidField(
-                "palette identity, localized name, RGB, brand mapping, or symbol"
+                "palette identity, localized name, RGB, brand mapping, or single-grapheme symbol"
             )
         }
 

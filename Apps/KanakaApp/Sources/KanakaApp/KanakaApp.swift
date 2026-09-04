@@ -1,97 +1,32 @@
 import KanakaProductDomain
 
-#if canImport(SwiftUI)
+#if canImport(SwiftUI) && canImport(SwiftData) && canImport(StoreKit)
 import SwiftUI
 
 @main
 struct KanakaApp: App {
+    @StateObject private var model = KanakaAppModel()
+    @Environment(\.scenePhase) private var scenePhase
+
     var body: some Scene {
         WindowGroup {
-            KanakaRootView()
+            AppRootView()
+                .environmentObject(model)
+                .task { await model.load() }
+                .onChange(of: scenePhase) { _, phase in
+                    Task { await model.handleScenePhase(phase) }
+                }
         }
-    }
-}
-
-private enum KanakaSection: String, CaseIterable, Identifiable {
-    case restoration = "修复室"
-    case workshop = "拼豆工坊"
-    case archive = "档案"
-    case settings = "设置"
-
-    var id: Self { self }
-    var systemImage: String {
-        switch self {
-        case .restoration: "paintbrush.pointed"
-        case .workshop: "square.grid.3x3.fill"
-        case .archive: "archivebox"
-        case .settings: "gearshape"
-        }
-    }
-}
-
-private struct KanakaRootView: View {
-    @State private var selection: KanakaSection? = .restoration
-
-    var body: some View {
-        NavigationSplitView {
-            List(KanakaSection.allCases, selection: $selection) { section in
-                Label(section.rawValue, systemImage: section.systemImage)
-                    .tag(section)
-            }
-            .navigationTitle("文明修复署")
-        } detail: {
-            switch selection ?? .restoration {
-            case .restoration:
-                ProductBoundaryPlaceholder(
-                    title: "修复室",
-                    subtitle: "Museum → Gallery → Artwork → Repair Fragment",
-                    symbol: "paintbrush.pointed"
-                )
-            case .workshop:
-                ProductBoundaryPlaceholder(
-                    title: "拼豆工坊",
-                    subtitle: "Museum 蓝图、材料清单与导出",
-                    symbol: "square.grid.3x3.fill"
-                )
-            case .archive:
-                ProductBoundaryPlaceholder(
-                    title: "档案",
-                    subtitle: "修复证据与故事里程碑",
-                    symbol: "archivebox"
-                )
-            case .settings:
-                ProductBoundaryPlaceholder(
-                    title: "设置",
-                    subtitle: "音频、触觉、无障碍与隐私",
-                    symbol: "gearshape"
-                )
-            }
-        }
-    }
-}
-
-private struct ProductBoundaryPlaceholder: View {
-    let title: String
-    let subtitle: String
-    let symbol: String
-
-    var body: some View {
-        ContentUnavailableView(
-            title,
-            systemImage: symbol,
-            description: Text(subtitle)
-        )
-        .navigationTitle(title)
     }
 }
 
 #else
 
-/// Linux build sentinel. The actual iOS/iPadOS executable is compiled by Xcode with SwiftUI.
+/// Linux build sentinel. The actual iOS/iPadOS executable is compiled by Xcode with Apple SDKs.
 @main
 enum KanakaAppBuildSentinel {
     static func main() {
-        print("KanakaApp Apple shell boundary compiled; SwiftUI requires an Apple SDK")
+        print("KanakaApp integration boundary compiled; Apple UI/adapters require Xcode validation")
     }
 }
 

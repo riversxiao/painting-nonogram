@@ -23,6 +23,7 @@ App 不依赖 `bead-gen` 的代码、服务或模型。接收方必须能够只�
 - `0` 表示空格；非零整数表示 `palette[]` 的 1-based index。
 - palette 顺序不是颜色身份。跨版本身份由稳定 `colorId` 表示。
 - 每个 palette entry 必须给出精确 `sRGB8`、商业拼豆品牌、色号和色卡版本；Museum 1 的每幅 Artwork 都会生成 Blueprint，因此不允许缺省品牌映射。
+- `accessibilitySymbol` 必须是唯一的单个扩展字素（一个用户可见字符）；它是网格与导出中的稳定非颜色编码，不允许空值或多字符标签。
 - 不允许用相近 RGB 自动合并稳定 `colorId`；颜色替换必须形成显式修订。
 - 透明度不承载网格语义；空格只由 cell 值 `0` 表示。
 
@@ -128,7 +129,7 @@ App 不依赖 `bead-gen` 的代码、服务或模型。接收方必须能够只�
 - 完整彩色 `grid` 与完整 `palette`（稳定 color ID、精确 sRGB8、品牌、色号、色卡版本、辅助符号）；
 - `materialCounts`、`totalBeads`；
 - 完成尺寸、豆间距和底板布局；
-- `exportRules`，至少固定 PNG 网格尺寸、坐标/图例规则和文件命名版本；
+- `exportRules`，至少固定 PNG 网格尺寸、坐标/图例规则和文件命名版本；`pixelsPerCell` 不得低于 8，以保证每个占用格中的单字素辅助符号可辨识；
 - `blueprintHash`。
 
 `blueprintHash` 的计算方式与 bead asset hash 相同：移除顶层 `blueprintHash`，对剩余 `blueprint-v1` 完整文档执行 RFC 8785/JCS，再对 UTF-8 bytes 计算 SHA-256。所有上述字段都参与 hash；修改任何生产语义或导出规则必须递增 Blueprint revision。编译器必须验证 Blueprint 的 grid/palette/physical 与其 `sourceBeadAsset` 一致，并重新统计材料数量。

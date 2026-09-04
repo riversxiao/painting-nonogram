@@ -52,6 +52,9 @@ public actor InMemoryProgressStore: ProgressStore {
                 }
                 return
             }
+            if existing.completedAt != nil, snapshot != existing.snapshot {
+                throw ProgressStoreError.completedSnapshotImmutable(key)
+            }
         }
 
         recordsByKey[key] = FragmentProgressRecord(
@@ -68,6 +71,11 @@ public actor InMemoryProgressStore: ProgressStore {
     ) async throws -> FragmentCompletionReceipt {
         let key = try validateCompletionCommand(command)
         let existing = recordsByKey[key]
+
+        if let existing, existing.completedAt != nil,
+           command.finalSnapshot != existing.snapshot {
+            throw ProgressStoreError.completedSnapshotImmutable(key)
+        }
 
         if let existing {
             if command.generation < existing.generation {

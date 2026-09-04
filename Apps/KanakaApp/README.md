@@ -1,15 +1,31 @@
-# KanakaApp 接入边界
+# KanakaApp Apple 集成边界
 
-此 Swift Package 建立 iOS/iPadOS 17 的 SwiftUI composition root 与自适应 `NavigationSplitView` 骨架，并依赖平台无关的 `KanakaProductDomain`。
+此 Swift Package 现在包含 iOS/iPadOS 17 与 macOS 14 的 Apple composition 实现，以及 Linux fallback sentinel。
 
-Apple 环境中的最终 composition root 应注入：
+## 已实现的 Apple 代码路径
 
-- Bundle-backed `RuntimeContentCatalog`；
-- `SwiftDataProgressStore` 与 StoryState 持久化 adapter；
-- StoreKit 2 已验证交易监听、恢复与 Museum entitlement snapshot；
-- Core Graphics/ImageIO Blueprint PNG renderer；
-- 临时导出 workspace 与系统 Share Sheet；
-- Scene phase 后台 `flush()`；
-- OSLog、MetricKit 与无障碍配置。
+- Bundle-backed validated development catalog；
+- Museum → Gallery → Artwork → Repair Fragment 导航；
+- 可操作 `5×5` 彩色 Nonogram reference board，含颜色符号、排除/擦除、Undo/Redo、autosave 与完成提交；
+- 分别使用命名 `KanakaProgress` / `KanakaStory` 配置的 `SwiftDataProgressStore` 与原子 `SwiftDataStoryStateStore`，避免默认持久化文件碰撞；
+- scene phase 与离开棋盘时对所有 active controller 执行 `flush()`；
+- 外部 `entitlements.json` 商品→Museum 映射、StoreKit 2 verified current entitlements、购买监听、购买与恢复；
+- 只接受 `AuthorizedBlueprint` 的 Core Graphics/ImageIO PNG renderer（20 MP ceiling、逐格稳定符号）、材料清单、临时 workspace 与系统分享；
+- 档案 milestone、错误状态、Dynamic Type 基础和逐格非颜色 accessibility labels。
 
-本仓库当前 Linux gate 只编译 fallback sentinel，证明 App 对领域层的依赖方向。SwiftUI、StoreKit、SwiftData Apple 分支、Core Graphics 输出与真机性能必须在 Xcode/iOS 17 或 macOS 14 SDK 下继续验证。SKU、价格、免费组合和 legacy revision 玩家政策仍保持外部配置，不在 App 骨架中硬编码。
+Bundle 中内容是 synthetic single-Fragment development fixture，不是 Museum 1 正式发布资产。商品配置默认为空；SKU、价格、免费组合继续由外部配置决定。Story completion mapping 对 development fixture 保持为空，不冒充 Museum 1 Canon。
+
+## 仍需 Apple/Xcode 验证
+
+Linux 的 `make validate-app` 只校验 Bundle catalog，并编译/运行 fallback sentinel。以下代码在 Linux 被条件编译排除，尚不能声称通过：
+
+- SwiftUI iPhone/iPad/macOS 编译、导航、布局和手势；
+- SwiftData reopen、save rollback、并发 transaction visibility 与 migration；
+- StoreKit Configuration 购买、pending、revocation、expiration、upgrade 和离线恢复；
+- PNG golden pixels、坐标/legend 排版、内存上限和实物打印；
+- UIKit Share Sheet iPad presentation 与 macOS ShareLink 生命周期；
+- scene suspension/background time、VoiceOver/Voice Control/Switch Control；
+- 25×25 production board 的 Canvas/虚拟化性能与真机 60 fps；
+- OSLog、MetricKit、PrivacyInfo 与签名 iOS App host target。
+
+当前 Swift Package 提供可组合代码和资源边界；安装到模拟器/真机仍需由 Xcode App target 承载并运行上述 gate。
