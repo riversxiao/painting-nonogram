@@ -1,0 +1,379 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 60;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		A10000000000000000000001 /* AppEnvironment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000001 /* AppEnvironment.swift */; };
+		A10000000000000000000002 /* AppLifecycle.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000002 /* AppLifecycle.swift */; };
+		A10000000000000000000003 /* AppRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000003 /* AppRootView.swift */; };
+		A10000000000000000000004 /* ArchiveSettingsViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000004 /* ArchiveSettingsViews.swift */; };
+		A10000000000000000000005 /* KanakaApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000005 /* KanakaApp.swift */; };
+		A10000000000000000000006 /* StoreKitEntitlementStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000006 /* StoreKitEntitlementStore.swift */; };
+		A10000000000000000000007 /* ExperiencePresentation.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000007 /* ExperiencePresentation.swift */; };
+		A10000000000000000000008 /* PlayableExperienceViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000008 /* PlayableExperienceViews.swift */; };
+		A10000000000000000000009 /* UserDefaultsPlayableExperienceStateStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000009 /* UserDefaultsPlayableExperienceStateStore.swift */; };
+		A1000000000000000000000A /* ActivityShareView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000A /* ActivityShareView.swift */; };
+		A1000000000000000000000B /* BlueprintExportService.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000B /* BlueprintExportService.swift */; };
+		A1000000000000000000000C /* NonogramBoardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000C /* NonogramBoardView.swift */; };
+		A1000000000000000000000D /* PuzzleScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000D /* PuzzleScreen.swift */; };
+		A1000000000000000000000E /* PuzzleViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000E /* PuzzleViewModel.swift */; };
+		A1000000000000000000000F /* RestorationViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A2000000000000000000000F /* RestorationViews.swift */; };
+		A10000000000000000000010 /* WorkshopViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000010 /* WorkshopViews.swift */; };
+		A10000000000000000000011 /* Content in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000011 /* Content */; };
+		A10000000000000000000012 /* entitlements.json in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000012 /* entitlements.json */; };
+		A10000000000000000000013 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A20000000000000000000013 /* Assets.xcassets */; };
+		A10000000000000000000014 /* KanakaCore in Frameworks */ = {isa = PBXBuildFile; productRef = A80000000000000000000001 /* KanakaCore */; };
+		A10000000000000000000015 /* KanakaContentKit in Frameworks */ = {isa = PBXBuildFile; productRef = A80000000000000000000002 /* KanakaContentKit */; };
+		A10000000000000000000016 /* KanakaProgress in Frameworks */ = {isa = PBXBuildFile; productRef = A80000000000000000000003 /* KanakaProgress */; };
+		A10000000000000000000017 /* KanakaStory in Frameworks */ = {isa = PBXBuildFile; productRef = A80000000000000000000004 /* KanakaStory */; };
+		A10000000000000000000018 /* KanakaProductDomain in Frameworks */ = {isa = PBXBuildFile; productRef = A80000000000000000000005 /* KanakaProductDomain */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		A20000000000000000000001 /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
+		A20000000000000000000002 /* AppLifecycle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppLifecycle.swift; sourceTree = "<group>"; };
+		A20000000000000000000003 /* AppRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRootView.swift; sourceTree = "<group>"; };
+		A20000000000000000000004 /* ArchiveSettingsViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveSettingsViews.swift; sourceTree = "<group>"; };
+		A20000000000000000000005 /* KanakaApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KanakaApp.swift; sourceTree = "<group>"; };
+		A20000000000000000000006 /* StoreKitEntitlementStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreKitEntitlementStore.swift; sourceTree = "<group>"; };
+		A20000000000000000000007 /* ExperiencePresentation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExperiencePresentation.swift; sourceTree = "<group>"; };
+		A20000000000000000000008 /* PlayableExperienceViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlayableExperienceViews.swift; sourceTree = "<group>"; };
+		A20000000000000000000009 /* UserDefaultsPlayableExperienceStateStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UserDefaultsPlayableExperienceStateStore.swift; sourceTree = "<group>"; };
+		A2000000000000000000000A /* ActivityShareView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActivityShareView.swift; sourceTree = "<group>"; };
+		A2000000000000000000000B /* BlueprintExportService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlueprintExportService.swift; sourceTree = "<group>"; };
+		A2000000000000000000000C /* NonogramBoardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NonogramBoardView.swift; sourceTree = "<group>"; };
+		A2000000000000000000000D /* PuzzleScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PuzzleScreen.swift; sourceTree = "<group>"; };
+		A2000000000000000000000E /* PuzzleViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PuzzleViewModel.swift; sourceTree = "<group>"; };
+		A2000000000000000000000F /* RestorationViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestorationViews.swift; sourceTree = "<group>"; };
+		A20000000000000000000010 /* WorkshopViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkshopViews.swift; sourceTree = "<group>"; };
+		A20000000000000000000011 /* Content */ = {isa = PBXFileReference; explicitFileType = folder; path = Content; sourceTree = "<group>"; };
+		A20000000000000000000012 /* entitlements.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = entitlements.json; sourceTree = "<group>"; };
+		A20000000000000000000013 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		A20000000000000000000014 /* KanakaApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = KanakaApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A30000000000000000000001 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000014 /* KanakaCore in Frameworks */,
+				A10000000000000000000015 /* KanakaContentKit in Frameworks */,
+				A10000000000000000000016 /* KanakaProgress in Frameworks */,
+				A10000000000000000000017 /* KanakaStory in Frameworks */,
+				A10000000000000000000018 /* KanakaProductDomain in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		A40000000000000000000001 = {
+			isa = PBXGroup;
+			children = (
+				A40000000000000000000002 /* Sources */,
+				A40000000000000000000009 /* Resources */,
+				A4000000000000000000000A /* Host */,
+				A4000000000000000000000B /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		A40000000000000000000002 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000001 /* AppEnvironment.swift */,
+				A20000000000000000000002 /* AppLifecycle.swift */,
+				A20000000000000000000003 /* AppRootView.swift */,
+				A20000000000000000000004 /* ArchiveSettingsViews.swift */,
+				A20000000000000000000005 /* KanakaApp.swift */,
+				A40000000000000000000003 /* Commerce */,
+				A40000000000000000000004 /* Experience */,
+				A40000000000000000000005 /* Export */,
+				A40000000000000000000006 /* Restoration */,
+				A40000000000000000000007 /* Workshop */,
+			);
+			name = Sources;
+			path = Sources/KanakaApp;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000003 /* Commerce */ = {
+			isa = PBXGroup;
+			children = (A20000000000000000000006 /* StoreKitEntitlementStore.swift */,);
+			path = Commerce;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000004 /* Experience */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000007 /* ExperiencePresentation.swift */,
+				A20000000000000000000008 /* PlayableExperienceViews.swift */,
+				A20000000000000000000009 /* UserDefaultsPlayableExperienceStateStore.swift */,
+			);
+			path = Experience;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000005 /* Export */ = {
+			isa = PBXGroup;
+			children = (
+				A2000000000000000000000A /* ActivityShareView.swift */,
+				A2000000000000000000000B /* BlueprintExportService.swift */,
+			);
+			path = Export;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000006 /* Restoration */ = {
+			isa = PBXGroup;
+			children = (
+				A2000000000000000000000C /* NonogramBoardView.swift */,
+				A2000000000000000000000D /* PuzzleScreen.swift */,
+				A2000000000000000000000E /* PuzzleViewModel.swift */,
+				A2000000000000000000000F /* RestorationViews.swift */,
+			);
+			path = Restoration;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000007 /* Workshop */ = {
+			isa = PBXGroup;
+			children = (A20000000000000000000010 /* WorkshopViews.swift */,);
+			path = Workshop;
+			sourceTree = "<group>";
+		};
+		A40000000000000000000009 /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				A20000000000000000000011 /* Content */,
+				A20000000000000000000012 /* entitlements.json */,
+			);
+			path = Sources/KanakaApp/Resources;
+			sourceTree = "<group>";
+		};
+		A4000000000000000000000A /* Host */ = {
+			isa = PBXGroup;
+			children = (A20000000000000000000013 /* Assets.xcassets */,);
+			path = Host;
+			sourceTree = "<group>";
+		};
+		A4000000000000000000000B /* Products */ = {
+			isa = PBXGroup;
+			children = (A20000000000000000000014 /* KanakaApp.app */,);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		A50000000000000000000001 /* KanakaApp */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A90000000000000000000002 /* Build configuration list for PBXNativeTarget "KanakaApp" */;
+			buildPhases = (
+				A30000000000000000000002 /* Sources */,
+				A30000000000000000000001 /* Frameworks */,
+				A30000000000000000000003 /* Resources */,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = KanakaApp;
+			packageProductDependencies = (
+				A80000000000000000000001 /* KanakaCore */,
+				A80000000000000000000002 /* KanakaContentKit */,
+				A80000000000000000000003 /* KanakaProgress */,
+				A80000000000000000000004 /* KanakaStory */,
+				A80000000000000000000005 /* KanakaProductDomain */,
+			);
+			productName = KanakaApp;
+			productReference = A20000000000000000000014 /* KanakaApp.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		A60000000000000000000001 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					A50000000000000000000001 = {CreatedOnToolsVersion = 16.0;};
+				};
+			};
+			buildConfigurationList = A90000000000000000000001 /* Build configuration list for PBXProject "KanakaApp" */;
+			compatibilityVersion = "Xcode 15.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (en, Base,);
+			mainGroup = A40000000000000000000001;
+			packageReferences = (
+				A70000000000000000000001 /* XCLocalSwiftPackageReference "KanakaCore" */,
+				A70000000000000000000002 /* XCLocalSwiftPackageReference "KanakaContentKit" */,
+				A70000000000000000000003 /* XCLocalSwiftPackageReference "KanakaProgress" */,
+				A70000000000000000000004 /* XCLocalSwiftPackageReference "KanakaStory" */,
+				A70000000000000000000005 /* XCLocalSwiftPackageReference "KanakaProductDomain" */,
+			);
+			productRefGroup = A4000000000000000000000B /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (A50000000000000000000001 /* KanakaApp */,);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		A30000000000000000000003 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000011 /* Content in Resources */,
+				A10000000000000000000012 /* entitlements.json in Resources */,
+				A10000000000000000000013 /* Assets.xcassets in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		A30000000000000000000002 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A10000000000000000000001 /* AppEnvironment.swift in Sources */,
+				A10000000000000000000002 /* AppLifecycle.swift in Sources */,
+				A10000000000000000000003 /* AppRootView.swift in Sources */,
+				A10000000000000000000004 /* ArchiveSettingsViews.swift in Sources */,
+				A10000000000000000000005 /* KanakaApp.swift in Sources */,
+				A10000000000000000000006 /* StoreKitEntitlementStore.swift in Sources */,
+				A10000000000000000000007 /* ExperiencePresentation.swift in Sources */,
+				A10000000000000000000008 /* PlayableExperienceViews.swift in Sources */,
+				A10000000000000000000009 /* UserDefaultsPlayableExperienceStateStore.swift in Sources */,
+				A1000000000000000000000A /* ActivityShareView.swift in Sources */,
+				A1000000000000000000000B /* BlueprintExportService.swift in Sources */,
+				A1000000000000000000000C /* NonogramBoardView.swift in Sources */,
+				A1000000000000000000000D /* PuzzleScreen.swift in Sources */,
+				A1000000000000000000000E /* PuzzleViewModel.swift in Sources */,
+				A1000000000000000000000F /* RestorationViews.swift in Sources */,
+				A10000000000000000000010 /* WorkshopViews.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin XCBuildConfiguration section */
+		AA0000000000000000000001 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		AA0000000000000000000002 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				COPY_PHASE_STRIP = YES;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		AA0000000000000000000003 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Kanaka;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.puzzle-games";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.riversxiao.kanaka;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		AA0000000000000000000004 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = Kanaka;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.puzzle-games";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MARKETING_VERSION = 0.1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.riversxiao.kanaka;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_STRICT_CONCURRENCY = complete;
+				SWIFT_VERSION = 6.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		A90000000000000000000001 /* Build configuration list for PBXProject "KanakaApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (AA0000000000000000000001 /* Debug */, AA0000000000000000000002 /* Release */,);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A90000000000000000000002 /* Build configuration list for PBXNativeTarget "KanakaApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (AA0000000000000000000003 /* Debug */, AA0000000000000000000004 /* Release */,);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A70000000000000000000001 /* XCLocalSwiftPackageReference "KanakaCore" */ = {isa = XCLocalSwiftPackageReference; relativePath = ../../Packages/KanakaCore; };
+		A70000000000000000000002 /* XCLocalSwiftPackageReference "KanakaContentKit" */ = {isa = XCLocalSwiftPackageReference; relativePath = ../../Packages/KanakaContentKit; };
+		A70000000000000000000003 /* XCLocalSwiftPackageReference "KanakaProgress" */ = {isa = XCLocalSwiftPackageReference; relativePath = ../../Packages/KanakaProgress; };
+		A70000000000000000000004 /* XCLocalSwiftPackageReference "KanakaStory" */ = {isa = XCLocalSwiftPackageReference; relativePath = ../../Packages/KanakaStory; };
+		A70000000000000000000005 /* XCLocalSwiftPackageReference "KanakaProductDomain" */ = {isa = XCLocalSwiftPackageReference; relativePath = ../../Packages/KanakaProductDomain; };
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A80000000000000000000001 /* KanakaCore */ = {isa = XCSwiftPackageProductDependency; package = A70000000000000000000001 /* XCLocalSwiftPackageReference "KanakaCore" */; productName = KanakaCore; };
+		A80000000000000000000002 /* KanakaContentKit */ = {isa = XCSwiftPackageProductDependency; package = A70000000000000000000002 /* XCLocalSwiftPackageReference "KanakaContentKit" */; productName = KanakaContentKit; };
+		A80000000000000000000003 /* KanakaProgress */ = {isa = XCSwiftPackageProductDependency; package = A70000000000000000000003 /* XCLocalSwiftPackageReference "KanakaProgress" */; productName = KanakaProgress; };
+		A80000000000000000000004 /* KanakaStory */ = {isa = XCSwiftPackageProductDependency; package = A70000000000000000000004 /* XCLocalSwiftPackageReference "KanakaStory" */; productName = KanakaStory; };
+		A80000000000000000000005 /* KanakaProductDomain */ = {isa = XCSwiftPackageProductDependency; package = A70000000000000000000005 /* XCLocalSwiftPackageReference "KanakaProductDomain" */; productName = KanakaProductDomain; };
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = A60000000000000000000001 /* Project object */;
+}

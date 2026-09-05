@@ -110,7 +110,7 @@ Museum 1 英雄画作《潮汐城的归桥》固定为 `3` 个 Repair Fragments�
 
 ## 当前可运行开发基线
 
-M0/M1 规则与内容层、M2 进度层、平台无关产品领域闭环，以及 Apple composition 代码已经建立。`Apps/KanakaApp` 包含开发 catalog 驱动的修复室/工坊 reference flow；Apple 条件分支仍需 Xcode 验证。使用 Swift 6.x：
+M0/M1 规则与内容层、M2 进度层、平台无关产品领域闭环，以及 Apple composition 代码已经建立。`Apps/KanakaApp` 包含开发 catalog 驱动的修复室/工坊 reference flow，并已由 `Apps/KanakaApp/KanakaApp.xcodeproj` 原生 iOS/iPadOS Host 承载；Apple SDK 编译和真机 gate 仍需在 macOS/Xcode 16+ 环境验证。使用 Swift 6.x：
 
 ```bash
 make build
@@ -122,7 +122,11 @@ make validate-access
 make validate-product
 make validate-experience
 make validate-app
+# macOS + Xcode 16+：编译并验证原生 iPhone/iPad Host 与 Bundle
+make validate-app-host
 ```
+
+原生 Host 使用共享 `KanakaApp` scheme，目标为 iOS 17、iPhone 与 iPad。工程直接共享编译 `Apps/KanakaApp/Sources/KanakaApp`，通过五个本地 Swift Package product 复用领域模块，并保持 `Content/` 目录及 `entitlements.json` 的 Bundle 布局。`.github/workflows/apple-host.yml` 在相关 Pull Request 上使用 GitHub-hosted macOS runner 自动执行同一 gate，因此本地没有 Mac 也能验证 Apple SDK compile/link 和构建产物资源。设备运行仍需在 Xcode 中为 `KanakaApp` target 设置本地 Development Team；仓库不提交个人 Team ID。
 
 `make validate-fixture` 会递归加载 `Content/Fixtures/`，校验 `Museum → Gallery → Artwork → 1–4 RepairFragments → PuzzleDefinition` 的 schema、ID、归属、引用与归一化区域，并逐题执行 clue、semantic hash、唯一精确彩色解和版本化纯逻辑验证；任一文件失败时返回非零。当前 fixture 覆盖全部 `1 / 2 / 3 / 4` Fragment cardinality。需要查看逐题 deduction steps 时，可运行：
 
@@ -144,4 +148,4 @@ swift run --package-path Tools/kanaka-content kanaka-content validate-puzzles Co
 
 `make validate-app` 校验 App Bundle 中的独立单 Artwork/两 Fragment 开发 catalog，运行同一 playable-experience gate，并构建/运行 Linux sentinel。Apple 分支现已实现首次世界观介绍、可跳过且不写作品进度的 `5×5` 教学、修复室/拼豆工坊初始入口、Museum → Gallery → Artwork → Fragment 导航、`5×5 + 1×1` 两阶段修复、单 Canvas 棋盘、一次拖画一个 batch、轴锁、缩放/平移模式、逻辑光标 accessibility actions、mutation autosave、Undo/Redo、阶段化 completion feedback、Workshop 授权、材料/PNG 导出、StoreKit 外部商品映射、SwiftData Story 原子 Store 与 scene-phase session flush。Bundle 内容仍是 synthetic development fixture，不是 Museum 1 正式内容。
 
-当前 Linux gate 只能证明 App 资源契约、依赖方向与 fallback sentinel；它不会编译 `canImport(SwiftUI/SwiftData/StoreKit/CoreGraphics)` 内的实现。真正的 SwiftUI 布局与手势、SwiftData transaction visibility、StoreKit Configuration、PNG 像素结果、Share Sheet、scene suspension、VoiceOver 和真机性能仍必须由 Xcode/iOS 17 或 macOS 14 SDK gate 验证。当前 Swift Package 也仍需由实际签名的 iOS App host target 集成后才能安装到设备。
+当前 Linux gate 只能证明 App 资源契约、依赖方向与 fallback sentinel；它不会编译 `canImport(SwiftUI/SwiftData/StoreKit/CoreGraphics)` 内的实现。Apple Host workflow 进一步覆盖 Apple SDK compile/link、Xcode source membership、Host metadata 以及构建产物中的内容与 entitlement 合约，但不启动 App。SwiftUI 布局与手势、SwiftData transaction visibility、StoreKit Configuration、PNG 像素和 VoiceOver 需后续 Simulator/UI gate；Share Sheet、scene suspension 和 60 fps 等系统集成与性能仍需签名真机验收。

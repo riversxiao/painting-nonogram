@@ -1,0 +1,47 @@
+name: Apple Host
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/apple-host.yml
+      - Makefile
+      - Apps/KanakaApp/**
+      - Packages/**
+      - Tools/kanaka-content/**
+      - Tools/validate-apple-host.swift
+  push:
+    branches:
+      - docs/kanaka-product-plan
+    paths:
+      - .github/workflows/apple-host.yml
+      - Makefile
+      - Apps/KanakaApp/**
+      - Packages/**
+      - Tools/kanaka-content/**
+      - Tools/validate-apple-host.swift
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build iOS Simulator Host
+    runs-on: macos-15
+    timeout-minutes: 30
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Show Apple toolchain
+        run: xcodebuild -version
+
+      - name: Build and validate Apple Host
+        run: make validate-app-host

@@ -6,6 +6,14 @@ import KanakaProgress
 import KanakaStory
 import SwiftUI
 
+private var appResourceBundle: Bundle {
+#if SWIFT_PACKAGE
+    Bundle.module
+#else
+    Bundle.main
+#endif
+}
+
 @MainActor
 final class KanakaAppModel: ObservableObject {
     @Published private(set) var services: KanakaAppServices?
@@ -27,13 +35,14 @@ final class KanakaAppModel: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         do {
-            guard let contentURL = Bundle.module.url(
+            let resourceBundle = appResourceBundle
+            guard let contentURL = resourceBundle.url(
                 forResource: "Content",
                 withExtension: nil
             ) else {
                 throw AppCompositionError.missingResource("Content")
             }
-            guard let entitlementURL = Bundle.module.url(
+            guard let entitlementURL = resourceBundle.url(
                 forResource: "entitlements",
                 withExtension: "json"
             ) else {
