@@ -53,4 +53,4 @@ Linux 的 `make validate-app` 只校验 Bundle catalog，并编译/运行 fallba
 - 25×25 production board 的 Canvas/虚拟化性能与真机 60 fps；
 - OSLog、MetricKit、PrivacyInfo、正式 App Icon、签名设备构建与归档。
 
-原生 Host、共享 scheme、源码 membership、本地 package links 与 Bundle resource layout 已建立。当前 Linux 环境没有 `xcodebuild`，因此仍需在 macOS/Xcode 16+ 中运行 `make build-app-host`，随后完成模拟器和真机 gate。
+原生 Host、共享 scheme、源码 membership、本地 package links 与 Bundle resource layout 已建立；GitHub-hosted `macos-15` / Xcode 16.4 gate 已通过 Apple SDK compile/link 及构建产物合约。下一步仍需增加 Simulator 启动/UI gate，并在具备签名环境后完成真机性能、系统集成与归档验收。

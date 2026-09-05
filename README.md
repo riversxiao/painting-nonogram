@@ -110,7 +110,7 @@ Museum 1 英雄画作《潮汐城的归桥》固定为 `3` 个 Repair Fragments�
 
 ## 当前可运行开发基线
 
-M0/M1 规则与内容层、M2 进度层、平台无关产品领域闭环，以及 Apple composition 代码已经建立。`Apps/KanakaApp` 包含开发 catalog 驱动的修复室/工坊 reference flow，并已由 `Apps/KanakaApp/KanakaApp.xcodeproj` 原生 iOS/iPadOS Host 承载；Apple SDK 编译和真机 gate 仍需在 macOS/Xcode 16+ 环境验证。使用 Swift 6.x：
+M0/M1 规则与内容层、M2 进度层、平台无关产品领域闭环，以及 Apple composition 代码已经建立。`Apps/KanakaApp` 包含开发 catalog 驱动的修复室/工坊 reference flow，并已由 `Apps/KanakaApp/KanakaApp.xcodeproj` 原生 iOS/iPadOS Host 承载；GitHub-hosted Xcode 16.4 Apple SDK compile/link 与 Bundle contract gate 已通过，Simulator 启动和真机 gate 仍待完成。使用 Swift 6.x：
 
 ```bash
 make build
