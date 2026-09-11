@@ -93,12 +93,12 @@ private struct BlueprintDetailView: View {
                     }
                 }
             } else if accessDenied {
-                VStack(spacing: 16) {
-                    ContentUnavailableView(
-                        "Blueprint 尚未解锁",
-                        systemImage: "lock.fill",
-                        description: Text("完成这幅作品的全部修复片段，或获得对应 Museum 蓝图库权益后即可使用。")
-                    )
+                ContentUnavailableView {
+                    Label("Blueprint 尚未解锁", systemImage: "lock.fill")
+                        .accessibilityIdentifier("workshop.locked")
+                } description: {
+                    Text("完成这幅作品的全部修复片段，或获得对应 Museum 蓝图库权益后即可使用。")
+                } actions: {
                     Button {
                         openRestoration()
                     } label: {
@@ -107,7 +107,6 @@ private struct BlueprintDetailView: View {
                     .buttonStyle(.borderedProminent)
                     .accessibilityIdentifier("workshop.locked.open-restoration")
                 }
-                .accessibilityIdentifier("workshop.locked")
             } else if let errorMessage {
                 ContentUnavailableView(
                     "无法载入 Blueprint",
