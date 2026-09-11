@@ -41,6 +41,19 @@ public actor SwiftDataStoryStateStore: StoryStateStore {
     private let encoder = JSONEncoder()
     private let decoder = JSONDecoder()
 
+    public init(inMemoryOnly: Bool) throws {
+        let configuration = ModelConfiguration(
+            "KanakaStory",
+            isStoredInMemoryOnly: inMemoryOnly
+        )
+        let container = try ModelContainer(
+            for: SwiftDataStoryStateEntity.self,
+            configurations: configuration
+        )
+        context = ModelContext(container)
+        context.autosaveEnabled = false
+    }
+
     public init(container: ModelContainer? = nil) throws {
         let resolved: ModelContainer
         if let container {

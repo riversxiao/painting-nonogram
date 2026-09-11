@@ -9,24 +9,37 @@ func validatePlayableExperience(directoryURL: URL) async throws {
     let catalog = try RuntimeContentCatalog.loadValidated(directoryURL: directoryURL)
     let experience = catalog.experience
 
-    let localizedValues = experience.introPages.flatMap { [$0.title, $0.body] }
-        + [
-            experience.tutorial.title,
-            experience.tutorial.body,
-            experience.tutorial.skipLabel,
-            experience.tutorial.completeLabel,
-        ]
-        + experience.routes.flatMap { [$0.title, $0.subtitle, $0.body, $0.actionLabel] }
-        + (experience.museums + experience.galleries + experience.artworks + experience.fragments)
-            .flatMap { presentation in
-                [
-                    presentation.title,
-                    presentation.subtitle,
-                    presentation.body,
-                    presentation.completionTitle,
-                    presentation.completionBody,
-                ].compactMap { $0 }
-            }
+    var localizedValues: [LocalizedText] = []
+    for page in experience.introPages {
+        localizedValues.append(contentsOf: [page.title, page.body])
+    }
+    localizedValues.append(contentsOf: [
+        experience.tutorial.title,
+        experience.tutorial.body,
+        experience.tutorial.skipLabel,
+        experience.tutorial.completeLabel,
+    ])
+    for route in experience.routes {
+        localizedValues.append(contentsOf: [
+            route.title,
+            route.subtitle,
+            route.body,
+            route.actionLabel,
+        ])
+    }
+    let entityPresentations = experience.museums
+        + experience.galleries
+        + experience.artworks
+        + experience.fragments
+    for presentation in entityPresentations {
+        localizedValues.append(contentsOf: [
+            presentation.title,
+            presentation.subtitle,
+            presentation.body,
+            presentation.completionTitle,
+            presentation.completionBody,
+        ].compactMap { $0 })
+    }
     guard localizedValues.allSatisfy({ value in
         !value.resolved(preferredLocales: ["zh-Hans"], defaultLocale: experience.defaultLocale).isEmpty
             && !value.resolved(preferredLocales: ["en"], defaultLocale: experience.defaultLocale).isEmpty

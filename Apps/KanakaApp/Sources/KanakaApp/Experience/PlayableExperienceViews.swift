@@ -38,6 +38,7 @@ private struct WorldIntroView: View {
                 Text(localized(page.title))
                     .font(.largeTitle.bold())
                     .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("onboarding.intro.title")
                 Text(localized(page.body))
                     .font(.title3)
                     .foregroundStyle(.secondary)
@@ -64,6 +65,7 @@ private struct WorldIntroView: View {
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
+                .accessibilityIdentifier("onboarding.intro.continue")
             }
             .frame(maxWidth: .infinity)
             .padding(32)
@@ -141,6 +143,7 @@ private struct TutorialExperienceView: View {
             VStack(spacing: 18) {
                 Text(localized(presentation.title))
                     .font(.largeTitle.bold())
+                    .accessibilityIdentifier("onboarding.tutorial.title")
                 Text(localized(presentation.body))
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -154,12 +157,14 @@ private struct TutorialExperienceView: View {
                     targetState: model.selectedCellState,
                     edit: model.edit
                 )
+                .accessibilityIdentifier("onboarding.tutorial.board")
                 tutorialTools
                 HStack {
                     Button(localized(presentation.skipLabel)) {
                         Task { await appModel.skipTutorial() }
                     }
                     .buttonStyle(.bordered)
+                    .accessibilityIdentifier("onboarding.tutorial.skip")
                     Spacer()
                     if model.session.isComplete {
                         Button {
@@ -168,9 +173,9 @@ private struct TutorialExperienceView: View {
                             Label(localized(presentation.completeLabel), systemImage: "checkmark.seal.fill")
                         }
                         .buttonStyle(.borderedProminent)
+                        .accessibilityIdentifier("onboarding.tutorial.complete")
                     }
                 }
-                .frame(maxWidth: 680)
             }
             .padding(24)
         }
@@ -245,6 +250,7 @@ private struct InitialRouteChoiceView: View {
             VStack(spacing: 20) {
                 Text("选择你的起点")
                     .font(.largeTitle.bold())
+                    .accessibilityIdentifier("onboarding.route-choice.title")
                 Text("两条路径共享内容、进度与权益；进入后仍可随时切换。")
                     .foregroundStyle(.secondary)
                     .multilineTextAlignment(.center)
@@ -263,8 +269,8 @@ private struct InitialRouteChoiceView: View {
                                 Task { await appModel.chooseInitialRoute(route) }
                             }
                             .buttonStyle(.borderedProminent)
+                            .accessibilityIdentifier("onboarding.route.\(route.rawValue)")
                         }
-                        .frame(maxWidth: 620, alignment: .leading)
                         .padding(20)
                         .background(.secondary.opacity(0.1), in: RoundedRectangle(cornerRadius: 16))
                     }

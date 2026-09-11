@@ -5,6 +5,7 @@ import SwiftUI
 
 struct WorkshopHomeView: View {
     let services: KanakaAppServices
+    let openRestoration: () -> Void
 
     var body: some View {
         List(services.catalog.museums.keys.sorted(), id: \.self) { museumID in
@@ -16,7 +17,11 @@ struct WorkshopHomeView: View {
                 )) {
                     ForEach(artworkIDs(in: museum), id: \.self) { artworkID in
                         NavigationLink {
-                            BlueprintDetailView(services: services, artworkID: artworkID)
+                            BlueprintDetailView(
+                                services: services,
+                                artworkID: artworkID,
+                                openRestoration: openRestoration
+                            )
                         } label: {
                             Label(
                                 experienceTitle(
@@ -27,11 +32,13 @@ struct WorkshopHomeView: View {
                                 systemImage: "square.grid.3x3"
                             )
                         }
+                        .accessibilityIdentifier("workshop.artwork.\(artworkID)")
                     }
                 }
             }
         }
         .navigationTitle("拼豆工坊")
+        .accessibilityIdentifier("workshop.home")
     }
 
     private func artworkIDs(in museum: MuseumDefinition) -> [String] {
@@ -45,9 +52,11 @@ private struct BlueprintDetailView: View {
     @EnvironmentObject private var appModel: KanakaAppModel
     let services: KanakaAppServices
     let artworkID: String
+    let openRestoration: () -> Void
 
     @State private var blueprint: AuthorizedBlueprint?
     @State private var exportURLs: [URL] = []
+    @State private var accessDenied = false
     @State private var errorMessage: String?
     @State private var isExporting = false
     @State private var showShare = false
@@ -83,14 +92,31 @@ private struct BlueprintDetailView: View {
                         .disabled(isExporting)
                     }
                 }
+            } else if accessDenied {
+                ContentUnavailableView {
+                    Label("Blueprint 尚未解锁", systemImage: "lock.fill")
+                        .accessibilityIdentifier("workshop.locked")
+                } description: {
+                    Text("完成这幅作品的全部修复片段，或获得对应 Museum 蓝图库权益后即可使用。")
+                } actions: {
+                    Button {
+                        openRestoration()
+                    } label: {
+                        Label("前往修复室", systemImage: "paintbrush.pointed")
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .accessibilityIdentifier("workshop.locked.open-restoration")
+                }
             } else if let errorMessage {
                 ContentUnavailableView(
-                    "Blueprint 尚未解锁",
-                    systemImage: "lock.fill",
+                    "无法载入 Blueprint",
+                    systemImage: "exclamationmark.triangle",
                     description: Text(errorMessage)
                 )
+                .accessibilityIdentifier("workshop.error")
             } else {
                 ProgressView("正在验证使用权限…")
+                    .accessibilityIdentifier("workshop.loading")
             }
         }
         .navigationTitle(experienceTitle(
@@ -122,8 +148,15 @@ private struct BlueprintDetailView: View {
                 artworkID: artworkID,
                 entitlements: appModel.entitlementSnapshot
             )
+            accessDenied = false
+            errorMessage = nil
+        } catch ProductDomainError.blueprintAccessDenied {
+            blueprint = nil
+            accessDenied = true
             errorMessage = nil
         } catch {
+            blueprint = nil
+            accessDenied = false
             errorMessage = String(describing: error)
         }
     }

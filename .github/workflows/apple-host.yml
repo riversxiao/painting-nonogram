@@ -1,0 +1,95 @@
+name: Apple Host
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/apple-host.yml
+      - Makefile
+      - Apps/KanakaApp/**
+      - Packages/**
+      - Tools/kanaka-content/**
+      - Tools/validate-apple-host.swift
+  push:
+    branches:
+      - docs/kanaka-product-plan
+    paths:
+      - .github/workflows/apple-host.yml
+      - Makefile
+      - Apps/KanakaApp/**
+      - Packages/**
+      - Tools/kanaka-content/**
+      - Tools/validate-apple-host.swift
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build and test iOS Simulator Host
+    runs-on: macos-15
+    timeout-minutes: 45
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+
+      - name: Show Apple toolchain
+        run: xcodebuild -version
+
+      - name: Build and validate Apple Host
+        run: make validate-app-host
+
+      - name: Boot an available iPad Simulator
+        id: simulator
+        shell: bash
+        run: |
+          udid="$(python3 - <<'PY'
+          import json
+          import subprocess
+          import sys
+
+          payload = json.loads(
+              subprocess.check_output(
+                  ["xcrun", "simctl", "list", "devices", "available", "-j"],
+                  text=True,
+              )
+          )
+          runtimes = sorted(
+              (
+                  runtime
+                  for runtime in payload["devices"]
+                  if ".iOS-" in runtime
+              ),
+              reverse=True,
+          )
+          for runtime in runtimes:
+              for device in payload["devices"][runtime]:
+                  if device.get("isAvailable") and device["name"].startswith("iPad"):
+                      print(device["udid"])
+                      sys.exit(0)
+          raise SystemExit("No available iPad Simulator was found")
+          PY
+          )"
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+          xcrun simctl boot "$udid" || true
+          xcrun simctl bootstatus "$udid" -b
+
+      - name: Run iPad UI smoke tests
+        run: make validate-app-ui UI_TEST_DESTINATION="id=${{ steps.simulator.outputs.udid }}"
+
+      - name: Upload UI test result bundle
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: KanakaAppUITests-${{ github.run_id }}-${{ github.run_attempt }}
+          path: .build/KanakaAppUITests.xcresult
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 7
