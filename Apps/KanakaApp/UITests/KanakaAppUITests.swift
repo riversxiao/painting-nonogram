@@ -1,25 +1,27 @@
 import XCTest
 
 final class KanakaAppUITests: XCTestCase {
-    private var app: XCUIApplication!
+    @MainActor private var app: XCUIApplication!
 
     override func setUpWithError() throws {
         continueAfterFailure = false
     }
 
-    override func tearDownWithError() throws {
-        app?.terminate()
-        app = nil
-    }
-
+    @MainActor
     func testColdStartCanReachRestoration() {
         launch(scenario: "world-intro")
+        defer { app.terminate() }
 
         assertExists("onboarding.intro.title")
-        XCTAssertEqual(element("onboarding.intro.title").label, "长夜之后")
+        let introTitle = element("onboarding.intro.title").label
+        XCTAssertEqual(introTitle, "长夜之后")
 
         tap("onboarding.intro.continue")
-        XCTAssertTrue(waitForLabel("文明修复署", on: element("onboarding.intro.title")))
+        let advancedToAgencyIntro = waitForLabel(
+            "文明修复署",
+            on: element("onboarding.intro.title")
+        )
+        XCTAssertTrue(advancedToAgencyIntro)
 
         tap("onboarding.intro.continue")
         assertExists("onboarding.tutorial.board")
@@ -32,8 +34,10 @@ final class KanakaAppUITests: XCTestCase {
         assertExists("restoration.museum.dev-museum-cardinality")
     }
 
+    @MainActor
     func testLockedWorkshopExplainsUnlockAndLinksToRestoration() {
         launch(scenario: "ready-workshop")
+        defer { app.terminate() }
 
         assertExists("workshop.home")
         assertExists("workshop.artwork.dev-artwork-cardinality-1")
@@ -46,8 +50,10 @@ final class KanakaAppUITests: XCTestCase {
         assertExists("restoration.museum.dev-museum-cardinality")
     }
 
+    @MainActor
     func testRestorationCanNavigateToPlayablePuzzle() {
         launch(scenario: "ready-restoration")
+        defer { app.terminate() }
 
         assertExists("restoration.museum.dev-museum-cardinality")
         tap("restoration.museum.dev-museum-cardinality")
@@ -60,22 +66,27 @@ final class KanakaAppUITests: XCTestCase {
 
         assertExists("puzzle.status", timeout: 15)
         assertExists("puzzle.board")
-        XCTAssertFalse(element("puzzle.error").exists)
+        let puzzleErrorExists = element("puzzle.error").exists
+        XCTAssertFalse(puzzleErrorExists)
     }
 
+    @MainActor
     private func launch(scenario: String) {
         app = XCUIApplication()
         app.launchEnvironment["KANAKA_UI_TESTING"] = "1"
         app.launchEnvironment["KANAKA_UI_SCENARIO"] = scenario
         app.launchArguments += ["-AppleLanguages", "(zh-Hans)", "-AppleLocale", "zh_Hans"]
         app.launch()
-        XCTAssertFalse(element("startup.error").waitForExistence(timeout: 2))
+        let startupErrorExists = element("startup.error").waitForExistence(timeout: 2)
+        XCTAssertFalse(startupErrorExists)
     }
 
+    @MainActor
     private func element(_ identifier: String) -> XCUIElement {
         app.descendants(matching: .any)[identifier]
     }
 
+    @MainActor
     private func tap(
         _ identifier: String,
         timeout: TimeInterval = 10,
@@ -96,20 +107,23 @@ final class KanakaAppUITests: XCTestCase {
         target.tap()
     }
 
+    @MainActor
     private func assertExists(
         _ identifier: String,
         timeout: TimeInterval = 10,
         file: StaticString = #filePath,
         line: UInt = #line
     ) {
+        let didExist = element(identifier).waitForExistence(timeout: timeout)
         XCTAssertTrue(
-            element(identifier).waitForExistence(timeout: timeout),
+            didExist,
             "Expected accessibility identifier \(identifier)",
             file: file,
             line: line
         )
     }
 
+    @MainActor
     private func waitForLabel(
         _ label: String,
         on element: XCUIElement,
