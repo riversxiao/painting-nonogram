@@ -9,6 +9,14 @@ private enum KanakaSection: String, CaseIterable, Identifiable {
     case settings = "设置"
 
     var id: Self { self }
+    var accessibilityIdentifier: String {
+        switch self {
+        case .restoration: "sidebar.restoration"
+        case .workshop: "sidebar.workshop"
+        case .archive: "sidebar.archive"
+        case .settings: "sidebar.settings"
+        }
+    }
     var systemImage: String {
         switch self {
         case .restoration: "paintbrush.pointed"
@@ -32,8 +40,10 @@ struct AppRootView: View {
                     systemImage: "exclamationmark.triangle",
                     description: Text(startupError)
                 )
+                .accessibilityIdentifier("startup.error")
             } else {
                 ProgressView("正在验证内容与恢复进度…")
+                    .accessibilityIdentifier("startup.loading")
             }
         }
         .alert("需要处理", isPresented: Binding(
@@ -61,17 +71,23 @@ struct MainAppShell: View {
             List(KanakaSection.allCases, selection: $selection) { section in
                 Label(section.rawValue, systemImage: section.systemImage)
                     .tag(section)
+                    .accessibilityIdentifier(section.accessibilityIdentifier)
             }
             .navigationTitle("文明修复署")
         } detail: {
             NavigationStack {
                 switch selection ?? .restoration {
                 case .restoration: RestorationHomeView(services: services)
-                case .workshop: WorkshopHomeView(services: services)
+                case .workshop:
+                    WorkshopHomeView(
+                        services: services,
+                        openRestoration: { selection = .restoration }
+                    )
                 case .archive: ArchiveView(services: services)
                 case .settings: SettingsView(services: services)
                 }
             }
+            .id(selection)
         }
     }
 }

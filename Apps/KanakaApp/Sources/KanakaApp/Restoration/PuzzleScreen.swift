@@ -38,6 +38,7 @@ struct PuzzleScreen: View {
                             targetState: model.selectedCellState,
                             edit: { edits in Task { await model.edit(edits) } }
                         )
+                        .accessibilityIdentifier("puzzle.board")
                         .disabled(model.isReadOnly || model.isClosing)
                         ToolPalette(model: model, session: session)
                             .disabled(model.isReadOnly || model.isClosing)
@@ -68,8 +69,10 @@ struct PuzzleScreen: View {
                 }
             } else if model.isLoading {
                 ProgressView("正在恢复会话…")
+                    .accessibilityIdentifier("puzzle.loading")
             } else {
                 ContentUnavailableView("无法打开谜题", systemImage: "exclamationmark.triangle")
+                    .accessibilityIdentifier("puzzle.error")
             }
         }
         .navigationTitle(fragmentPresentation.map {
@@ -100,6 +103,7 @@ private struct PuzzleStatusView: View {
                 .foregroundStyle(session.isComplete ? .green : .secondary)
         }
         .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("puzzle.status")
     }
 }
 

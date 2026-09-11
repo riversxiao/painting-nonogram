@@ -34,6 +34,14 @@ make validate-app-host
 
 `.github/workflows/apple-host.yml` 会在相关 Pull Request 上使用 GitHub-hosted `macos-15` runner 自动执行 `make validate-app-host`，因此开发者不需要本地 Mac 即可获得 Apple SDK compile/link 与 Bundle contract gate。gate 会将磁盘 Swift 源码与 Xcode 实际编译的 file list 对比，断言 Bundle ID、可执行文件、iOS 17 和 iPhone/iPad metadata，并对构建产物中的 Content 与 entitlement 配置执行语义校验。workflow 只授予 `contents: read` 权限、禁用 checkout credential 持久化，并且不配置签名、证书或 secrets。
 
+同一 workflow 随后启动一个 GitHub-hosted iPad Simulator，并运行三个相互隔离的 XCUITest smoke 场景：冷启动完成介绍、跳过教学并进入修复室；工坊 Blueprint 锁定页解释条件并跳转修复室；修复室依次进入 Museum、Gallery、Artwork、Fragment 和可操作棋盘。测试只在 DEBUG 构建中通过 `KANAKA_UI_TESTING=1` 启用内存状态，并用 `KANAKA_UI_SCENARIO` 选择初始状态，不会污染真实 UserDefaults 或 SwiftData。失败时 CI 上传 `.xcresult` 供诊断。
+
+在 macOS/Xcode 16+ 上也可选择一个已启动的 Simulator 手动运行同一 gate：
+
+```bash
+make validate-app-ui UI_TEST_DESTINATION="id=<SIMULATOR_UDID>"
+```
+
 workflow 之外，也可以打开 `Apps/KanakaApp/KanakaApp.xcodeproj`，选择共享 `KanakaApp` scheme 后运行。设备构建需在本地为 target 设置 Development Team；不要把个人 Team ID 写入共享工程。
 
 资源必须保持现有布局：`Resources/Content` 作为完整目录复制到 App Bundle，`Resources/entitlements.json` 位于 Bundle 根目录。composition 在 SwiftPM 下使用 `Bundle.module`，在原生 Host 下使用 `Bundle.main`。新增、删除或移动 App Swift 文件时，必须同时更新 `Package.swift` 资源/target 约定和 Xcode target membership。
@@ -53,4 +61,4 @@ Linux 的 `make validate-app` 只校验 Bundle catalog，并编译/运行 fallba
 - 25×25 production board 的 Canvas/虚拟化性能与真机 60 fps；
 - OSLog、MetricKit、PrivacyInfo、正式 App Icon、签名设备构建与归档。
 
-原生 Host、共享 scheme、源码 membership、本地 package links 与 Bundle resource layout 已建立；GitHub-hosted `macos-15` / Xcode 16.4 gate 已通过 Apple SDK compile/link 及构建产物合约。下一步仍需增加 Simulator 启动/UI gate，并在具备签名环境后完成真机性能、系统集成与归档验收。
+原生 Host、共享 scheme、源码 membership、本地 package links 与 Bundle resource layout 已建立；GitHub-hosted `macos-15` / Xcode 16.4 gate 已通过 Apple SDK compile/link 及构建产物合约。首批 iPad Simulator UI gate 已接入三条 smoke 路径，覆盖 onboarding 到修复室、工坊锁定恢复路径，以及 Museum 到 Puzzle 的深导航；iPhone compact navigation、完整解题提交和真机系统集成仍是下一阶段验收重点。

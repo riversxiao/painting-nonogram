@@ -486,6 +486,8 @@ StoreKit 实现仍需监听 transaction updates、验证与恢复权益、使用
 
 ### 12.3 UI 测试
 
+PR 的首批 iPad Simulator smoke gate 使用 DEBUG-only 内存状态隔离，固定覆盖：冷启动完成两页介绍、跳过教学并选择修复室；从工坊锁定 Blueprint 查看明确解锁条件并返回修复室；从 Museum 经 Gallery、Artwork、Fragment 进入 Puzzle。后续按以下产品流程扩展：
+
 - 完成或跳过共同教学后才能选择路径。
 - 两条路径层级平等、可自由切换且共享内容。
 - Artwork 显示正确 `x/n`。
@@ -514,6 +516,7 @@ StoreKit 实现仍需监听 transaction updates、验证与恢复权益、使用
 - Core/Content 单元测试。
 - 全量内容 validator。
 - App 无签名 build：`.github/workflows/apple-host.yml` 在 GitHub-hosted macOS runner 上调用 `make validate-app-host`，验证 compile/link、Xcode source membership、Host metadata、构建产物 Content 与 entitlement 合约。
+- iPad Simulator smoke：同一 workflow 调用 `make validate-app-ui`，运行 onboarding→修复室、工坊锁定→修复室、Museum→Puzzle 三条隔离 XCUITest；失败时保留 `.xcresult`。
 - 格式与静态检查。
 
 ### Release Candidate
@@ -551,7 +554,7 @@ Release 使用不可变 tag，记录 App 版本、Museum 内容版本和 commit�
 
 当前 Apple composition 代码已具备 Bundle catalog、Museum → Gallery → Artwork → Fragment 导航、平台无关 `BoardGeometry` / `BoardInputSession`、单 Canvas 棋盘 adapter、批量拖画、缩放/平移模式、mutation autosave、Undo/Redo、completion、SwiftData Progress/Story stores、StoreKit 外部映射、授权后 Blueprint PNG/材料导出、Share Sheet 与 scene flush。纯 Swift 坐标/输入事务已有 Linux gate；原生 iOS/iPadOS Host、共享 scheme 与 GitHub-hosted macOS 无签名编译/Bundle gate 已建立，并已在 Xcode 16.4 / iOS 18.5 SDK 下通过 compile/link、source membership、Host metadata、Content 与 entitlement 合约。Bundle 仍使用 synthetic development fixture。以下 Apple 运行工作仍需 Simulator 或真机完成：
 
-- 保持 GitHub-hosted macOS compile/link gate 为绿色；设备签名继续由本地或发布 CI 配置，不进入仓库。
+- 保持 GitHub-hosted macOS compile/link 与首批 iPad Simulator UI smoke gate 为绿色；设备签名继续由本地或发布 CI 配置，不进入仓库。
 - 在 Apple SDK/真机编译并验证适合 `20×20/25×25` 的 Canvas adapter、连续拖拽 transaction、pinch 与平移事件冲突、逻辑光标 accessibility actions 和 60 fps 门；Linux gate 只证明对应的纯 Swift geometry/input 契约。
 - 用 SwiftData reopen/migration、StoreKit Configuration、PNG golden pixel、Share Sheet、scene suspension 和 accessibility UI tests 验证 adapters。
 

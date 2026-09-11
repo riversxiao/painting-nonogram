@@ -14,6 +14,62 @@ private var appResourceBundle: Bundle {
 #endif
 }
 
+private enum AppUITestScenario: String {
+    case worldIntro = "world-intro"
+    case tutorial
+    case routeChoice = "route-choice"
+    case readyRestoration = "ready-restoration"
+    case readyWorkshop = "ready-workshop"
+
+    var experienceState: PlayableExperienceState {
+        switch self {
+        case .worldIntro:
+            PlayableExperienceState()
+        case .tutorial:
+            PlayableExperienceState(hasAcknowledgedWorldIntro: true)
+        case .routeChoice:
+            PlayableExperienceState(
+                hasAcknowledgedWorldIntro: true,
+                tutorialDisposition: .skipped
+            )
+        case .readyRestoration:
+            PlayableExperienceState(
+                hasAcknowledgedWorldIntro: true,
+                tutorialDisposition: .skipped,
+                initialRoute: .restoration
+            )
+        case .readyWorkshop:
+            PlayableExperienceState(
+                hasAcknowledgedWorldIntro: true,
+                tutorialDisposition: .skipped,
+                initialRoute: .workshop
+            )
+        }
+    }
+}
+
+private struct AppLaunchConfiguration {
+    private static let uiTestingKey = "KANAKA_UI_TESTING"
+    private static let scenarioKey = "KANAKA_UI_SCENARIO"
+
+    var usesInMemoryPersistence = false
+    var seededExperienceState: PlayableExperienceState?
+    var errorMessage: String?
+
+    init(environment: [String: String]) {
+#if DEBUG
+        guard environment[Self.uiTestingKey] == "1" else { return }
+        usesInMemoryPersistence = true
+        let rawScenario = environment[Self.scenarioKey] ?? AppUITestScenario.worldIntro.rawValue
+        guard let scenario = AppUITestScenario(rawValue: rawScenario) else {
+            errorMessage = "Unknown UI test scenario: \(rawScenario)"
+            return
+        }
+        seededExperienceState = scenario.experienceState
+#endif
+    }
+}
+
 @MainActor
 final class KanakaAppModel: ObservableObject {
     @Published private(set) var services: KanakaAppServices?
@@ -24,7 +80,20 @@ final class KanakaAppModel: ObservableObject {
 
     private var isLoading = false
     private var entitlementUpdatesTask: Task<Void, Never>?
-    private let experienceStore = UserDefaultsPlayableExperienceStateStore()
+    private let launchConfiguration: AppLaunchConfiguration
+    private let experienceStore: any PlayableExperienceStateStore
+
+    init(environment: [String: String] = ProcessInfo.processInfo.environment) {
+        let configuration = AppLaunchConfiguration(environment: environment)
+        launchConfiguration = configuration
+        if configuration.usesInMemoryPersistence {
+            experienceStore = InMemoryPlayableExperienceStateStore(
+                state: configuration.seededExperienceState
+            )
+        } else {
+            experienceStore = UserDefaultsPlayableExperienceStateStore()
+        }
+    }
 
     deinit {
         entitlementUpdatesTask?.cancel()
@@ -35,6 +104,9 @@ final class KanakaAppModel: ObservableObject {
         isLoading = true
         defer { isLoading = false }
         do {
+            if let errorMessage = launchConfiguration.errorMessage {
+                throw AppCompositionError.invalidLaunchConfiguration(errorMessage)
+            }
             let resourceBundle = appResourceBundle
             guard let contentURL = resourceBundle.url(
                 forResource: "Content",
@@ -53,8 +125,12 @@ final class KanakaAppModel: ObservableObject {
             let loadedExperienceState = try await experienceStore.load()
                 ?? PlayableExperienceState()
             _ = try PlayableExperienceFlow(state: loadedExperienceState)
-            let progressStore = try SwiftDataProgressStore()
-            let storyStore = try SwiftDataStoryStateStore()
+            let progressStore = try SwiftDataProgressStore(
+                inMemoryOnly: launchConfiguration.usesInMemoryPersistence
+            )
+            let storyStore = launchConfiguration.usesInMemoryPersistence
+                ? try SwiftDataStoryStateStore(inMemoryOnly: true)
+                : try SwiftDataStoryStateStore()
             let storyRules = try Museum1StoryRules.make()
             let storyProcessor = StoryEventProcessor(store: storyStore, rules: storyRules)
             let flow = try ProductFlow(
@@ -202,12 +278,15 @@ final class KanakaAppServices {
 enum AppCompositionError: Error, CustomStringConvertible {
     case missingResource(String)
     case unsupportedEntitlementSchema(String)
+    case invalidLaunchConfiguration(String)
 
     var description: String {
         switch self {
         case .missingResource(let name): "Missing bundled resource: \(name)"
         case .unsupportedEntitlementSchema(let schema):
             "Unsupported entitlement configuration schema: \(schema)"
+        case .invalidLaunchConfiguration(let reason):
+            "Invalid launch configuration: \(reason)"
         }
     }
 }

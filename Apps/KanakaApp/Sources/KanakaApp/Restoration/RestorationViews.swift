@@ -25,9 +25,11 @@ struct RestorationHomeView: View {
                         }
                     }
                 }
+                .accessibilityIdentifier("restoration.museum.\(museumID)")
             }
         }
         .navigationTitle("修复室")
+        .accessibilityIdentifier("restoration.home")
         .overlay {
             if services.catalog.museums.isEmpty {
                 ContentUnavailableView("暂无博物馆", systemImage: "building.columns")
@@ -68,6 +70,7 @@ private struct MuseumView: View {
                                 }
                             }
                         }
+                        .accessibilityIdentifier("restoration.gallery.\(galleryID)")
                     }
                 }
             }
@@ -115,6 +118,7 @@ private struct GalleryView: View {
                                 }
                             }
                         }
+                        .accessibilityIdentifier("restoration.artwork.\(artworkID)")
                     }
                 }
             }
@@ -174,6 +178,7 @@ struct ArtworkView: View {
                                 state: state
                             )
                         }
+                        .accessibilityIdentifier("restoration.fragment.\(fragmentID)")
                     }
                 }
             }
